@@ -8,7 +8,7 @@ We developed a model to infer key aspects of coronavirus transmission in Illinoi
 ### Model overview
 We introduce an adaptation of an age-structured SEIR model (Figure 1) that accounts for asymptomatic infection and mortality. Individuals are infectious upon entry into the exposed class ($E$). Individuals that enter the asymptomatic class ($A$) can infect others in the community but will eventually clear the infection without ever showing symptoms of disease, while those that enter the presymptomatic class $P$ will progress to symptomatic disease. Symptomatic infections (class $I$) are divided into mild cases, ($I_\mathrm{M}$), which will resolve without hospital attention, and severe cases (class $I_\mathrm{S}$) that will require hospitalization. The class ($I_\mathrm{H}$) refers to severe cases who are hospitalized but not in the ICU, and $I_\mathrm{C}$ refers to severe cases who are in the ICU. 
 
-![Model schematic](model_diagram.png)
+![Model schematic](model_diagram.pdf)
 
 To incorporate demographic stochasticity, the model is implemented in a discrete-time stochastic framework.
 The model is implemented in R, using an interface with C++ for the dynamic model within the "pomp" [package](http://kingaa.github.io/pomp/install.html)<sup>1</sup>.
