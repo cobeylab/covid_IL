@@ -15,7 +15,7 @@ The model is implemented in R, using an interface with C++ for the dynamic model
 
 ### Inference
 We model the state-level dynamics of COVID-19 via three distinct regions, as described in [Data](./Parameters). For each region, we infer the transmission rate of coronavirus before and after public health interventions, as well as the number of individuals initally infected in Illinois. We fix all other parameters based on values chosen from the ltierature, as described in the [Parameters](./Parameters) directory. 
-The model is fitted to reported regional in-hospital deaths beginning on March 16, 2020 (data available via the Illinois Department of Public Health, contact authors for details).
+The model is fitted to in-hospital deaths reported by the New York Times from March 15 to March 24, 2020 and to in-hospital deaths reported by the Illinois Department of Publc Health from March 24, 2020 onwards. We fitted the model to the data using maximum likelihood methods for partially observed Markov process (POMP) models (details in [Data](./Parameters)).
 
 ### Evaluating the effects of public health interventions
 Our model can evaluate the effects of public health interventions of varying forms, strenghts, and durations. 
