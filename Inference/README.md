@@ -10,7 +10,7 @@ Given a set of parameters, we can simulate both the hidden and observed states o
 * `initializer_compartment_distribute_IH4.c`: Initializer that places people into infectious classes at the beginning of the simulation.
 * `dmeasure_deaths_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths. Observed deaths at each timestep are a sample of those who have died in the hospital. We assume that we do not observe all covid deaths because testing does not detect all infections.
 
-# Run script descriptions
+## Run script descriptions
 * `inference_functions.R`: Essential functions for creating and using `pomp` objects. 
 * `1_pfilter_search.R`: Evaluates likelihood on a sample of points with pfilter.
 * `2_mif_single.R`: Runs `mif` searches starting at the 200 best points from the initial `pfilter` search.
