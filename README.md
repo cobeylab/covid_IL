@@ -14,8 +14,8 @@ To incorporate demographic stochasticity, the model is implemented in a discrete
 The model is implemented in R, using an interface with C for the dynamic model within the "pomp" [package](http://kingaa.github.io/pomp/install.html)<sup>1</sup>.
 
 ### Inference
-We model the state-level dynamics of COVID-19 via three distinct regions, as described in [Data](./Data). For each region, we infer the transmission rate of coronavirus before and after public health interventions, as well as the number of individuals initally infected in Illinois. We fix all other parameters based on values chosen from the ltierature, as described in the [Parameters](./Parameters) directory. 
-The model is fitted to in-hospital deaths reported by the New York Times from March 15 to March 24, 2020 and to in-hospital deaths reported by the Illinois Department of Publc Health from March 24, 2020 onwards. We fitted the model to the data using maximum likelihood methods for partially observed Markov process (POMP) models (details in [Data](./Data)).
+We model the state-level dynamics of COVID-19 via three distinct regions, as described in [Data](./Data). For each region, we infer the transmission rate of COVID-19 before and after public health interventions, as well as the number of individuals initally infected in Illinois. We fix all other parameters based on values chosen from the ltierature, as described in the [Parameters](./Parameters) directory. 
+The model is fitted to in-hospital deaths reported by the New York Times from March 15 to March 24, 2020 and to in-hospital deaths reported by the Illinois Department of Publc Health from March 24, 2020 onwards. We fitted the model to the data using maximum likelihood methods for partially observed Markov process (POMP) models (details in [Inference](./Inference)).
 
 ### Evaluating the effects of public health interventions
 Our model can evaluate the effects of public health interventions of varying forms, strenghts, and durations. 
