@@ -27,7 +27,7 @@ We incorporate interventions as scaling factors on the transmission rate for all
 Figure 2 gives forecasts of new symptomatic and asymptomatic infections, mortality, and hospitalizations for Illinois through July 31, 2020 under the three intervention scenarios.
 ![Figure 2](./Forecasting/plots/summary_1_outputs.png)
 
-Figure 3 shows the prevalence of symptomatic and asymptomatic infection and the fraction of susceptible individuals in Illinois through July 31, 2020 under the three intervention scenarios. 
+Figure 3 shows the prevalence of symptomatic and asymptomatic infections and the fraction of susceptible individuals in Illinois through July 31, 2020 under the three intervention scenarios. 
 ![Figure 3](./Forecasting/plots/summary_2_outputs.png)
 
 ### Navigating the repository 
