@@ -1,7 +1,12 @@
 # Parameter values
 
-Here, we show the values of parameters we fixed based on current literature on covid-19.
+## Table 1: Parameters and descriptions
 
+![table1](table1_pars.png)
+
+## Table 2: Age-specific parameter values
+
+![table2](table2_pars.png)
 
 # Sources
 
@@ -23,12 +28,14 @@ We assumed that the duration of infectiousness is similar in mild and asymptomat
 
 ## Test sensitivity and fraction of hospitalized infections that are tested: &theta;<sub>test</sub> and &nu;<sub>hosp.</sub>
 
+Data on PCR test-sensitivity ranges from 60%-90% and likely depends on viral load <sup>8,9</sup>. Since we are interested in test results from hospitalized patients who are at risk of death, we assume that test-sensitivity for this population is on the higher end of this range (85%). We do not have data to directly inform the probability of receiving a test given that a person is hospitalized. However, given our current understanding of testing protocol in hospitals, it is reasonable to assume that most people who are hospitalized with covid-like symptoms will be tested, so we fix this probability at 95%.
 
-# Parameters affecting hospitalization
+## Parameters affecting hospitalization
 
 Parameters that determine how hospitalized people are partitioned (&psi;<sub>1,2,3,4</sub>) and the rates at which they move through the hospital to death or recovery (&zeta;<sub>crit.</sub>, &gamma;<sub>hosp.</sub>, &mu;<sub>crit.</sub>, &mu;<sub>hosp.</sub>)were based on current data from a hospital system in Illinois. 
 
 # References
+
 
 1.  Backer Jantien A, Klinkenberg Don, Wallinga Jacco. Incubation period of 2019 novel coronavirus (2019-nCoV) infections among travellers from Wuhan, China, 20–28 January 2020. Euro Surveill. 2020;25(5):pii=2000062. https://doi.org/10.2807/1560-7917.ES.2020.25.5.2000062
 2. Lauer SA, Grantz KH, Bi Q, et al. The Incubation Period of Coronavirus Disease 2019 (COVID-19) From Publicly Reported Confirmed Cases: Estimation and Application. Ann Intern Med. 2020; [Epub ahead of print 10 March 2020]. doi: https://doi.org/10.7326/M20-0504
@@ -38,4 +45,7 @@ medRxiv 2020.03.03.20029983; doi: https://doi.org/10.1101/2020.03.03.20029983
 5. Du Z, Xu X, Wu Y, Wang L, Cowling BJ, Ancel Meyers L. Serial interval of COVID-19 among publicly reported confirmed cases. Emerg Infect Dis. 2020 Jun. https://doi.org/10.3201/eid2606.200357
 6. Nishiura H, Linton NM, Akhmetzhanov AR. Serial interval of novel coronavirus (COVID-19) infections. Int. J. Infect. Dis. 2020. doi: 10.1016/j.ijid.2020.02.060
 7. Wölfel, R., Corman, V.M., Guggemos, W. et al. Virological assessment of hospitalized patients with COVID-2019. Nature (2020). https://doi.org/10.1038/s41586-020-2196-x
+8. Wang W, Xu Y, Gao R, et al. Detection of SARS-CoV-2 in Different Types of Clinical Specimens. JAMA. Published online March 11, 2020. doi:10.1001/jama.2020.3786
+9. Yang Yang, Minghui Yang, Chenguang Shen, Fuxiang Wang, Jing Yuan, Jinxiu Li, Mingxia Zhang, Zhaoqin Wang, Li Xing, Jinli Wei, Ling Peng, Gary Wong, Haixia Zheng, Mingfeng Liao, Kai Feng, Jianming Li, Qianting Yang, Juanjuan Zhao, Zheng Zhang, Lei Liu, Yingxia Liu.  Evaluating the accuracy of different respiratory specimens in the laboratory diagnosis and monitoring the viral shedding of 2019-nCoV infections. medRxiv 2020.02.11.20021493; doi: https://doi.org/10.1101/2020.02.11.20021493
+
 
