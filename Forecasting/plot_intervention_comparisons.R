@@ -236,7 +236,27 @@ p_summary_1 <- ggplot(df_sum %>% filter(Compartment %in% c("New observed and uno
   theme( axis.text = element_text(size = rel(1.2))) + 
   theme(strip.text.x = element_text(size = 11))
 
-save_plot(paste0("summary_1_",plot_filename), p_summary_1, base_width = 12, base_height = 8) 
+title <- ggdraw() + 
+  draw_label(
+    paste0("Simulated projections (median and 95% confidence interval) for models fitted to data through ", this_date),
+    fontface = 'bold',
+    size = 12,
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7)
+  )
+
+p_output_1 <- plot_grid(title, 
+                     p_summary_1,
+                     ncol = 1,
+                     rel_heights = c(0.1,1))
+
+
+save_plot(paste0("summary_1_",plot_filename), p_output_1, base_width = 12, base_height = 8) 
 
 p_summary_2 <- ggplot(df_sum %>% filter(Compartment %in% c("Susceptibles",
                                                            "Prevalence")), 
@@ -250,6 +270,12 @@ aes(x = Date, y= median)) + geom_line(aes(color = intervention), linetype = 2) +
   theme( axis.text = element_text(size = rel(1.2))) + 
   theme(strip.text.x = element_text(size = 11))
 
-save_plot(paste0("summary_2_",plot_filename), p_summary_1, base_width = 12, base_height = 8) 
+p_output_2 <- plot_grid(title, 
+                        p_summary_2,
+                        ncol = 1,
+                        rel_heights = c(0.1,1))
+
+
+save_plot(paste0("summary_2_",plot_filename), p_output_2, base_width = 12, base_height = 8) 
 
 

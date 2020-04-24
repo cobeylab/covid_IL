@@ -1,15 +1,12 @@
 ---
 title: "Simulate from maximum likelihood parameter estimates"
 author: Sylvia Ranjeva
-date: April 21, 2020
 output: html_document
 ---
-Model with time-varying under-reporting of deaths March 13-March 28, using estimate of under-reproting based on excess P&I mortality from Weinberger et al.
-
-Code to simulate and compare three different intervention scenarios:
-1. Shelter in place indefinitely
-2. Shelter in place lifted 5/1
-3. Never shelter in place
+This code produces simulated projections of IL coronavirus dynamcis from the best-fit model parameters.  We simulate the dynamics under three different intervention scenarios:
+1. Shelter in place beginning on March 16, 2020 and continuing indefinitely
+2. Shelter in place beginning on March 16, and lifted on a determined date (here, May 1, 2020)
+3. Shelter in place never enacted.
 
 ```{r}
 require(dplyr)
@@ -29,11 +26,7 @@ rename <- dplyr::rename
 summarize <- dplyr::summarise
 contains <- dplyr::contains
 
-root <- '../../../../'
-source(file.path(root, '_covid_root.R'))
-covid_set_root(root)
-
-input_points_file = "../../../inference/April_22/parallelization_test/consolidated.sample_from_surface.csv"
+input_points_file = "../Inference/inference_outputs/model_params.csv"
 source("input_file_specification.R")
 
 # Projection specifications: all projections
@@ -57,7 +50,7 @@ intervention_end_date <- end_projection_date
 output_filename = "./sim_projections/projections_indefinite"
 
 t_start <- Sys.time()
-source("inference_to_simulation_statewide.R")
+source("inference_to_simulation.R")
 t_end <- Sys.time()
 print(t_end - t_start)
 
@@ -67,7 +60,7 @@ intervention_end_date <- end_projection_date
 output_filename = "./sim_projections/projections_lifted"
 
 t_start <- Sys.time()
-source("inference_to_simulation_statewide.R")
+source("inference_to_simulation.R")
 t_end <- Sys.time()
 print(t_end - t_start)
 
@@ -77,16 +70,21 @@ intervention_end_date <- as.Date(end_projection_date + 2)
 output_filename = "./sim_projections/projections_never"
 
 t_start <- Sys.time()
-source("inference_to_simulation_statewide.R")
+source("inference_to_simulation.R")
 t_end <- Sys.time()
 print(t_end - t_start)
 
 
-## Plot results 
+## Plot results ## ----------------------
 file_path = "./sim_projections/"
 plot_filename <- "outputs.png"
 intervention_scenarios <- c("indefinite", "lifted", "never")
 
+plot_filename <- "outputs.png"
+intervention_scenarios <- c("indefinite", "lifted", "never")
+this_date <- "April 22, 2020"
+
+source("plot_intervention_comparisons.R")
 
 ```
 

@@ -1,6 +1,5 @@
 ## Source simulation infrastructure
-source(covid_get_path('POMP/simulation/statewide/simulation_statewide.R'))
-source(covid_get_path('POMP/inference/statewide/inference_statewide.R'))
+source('simulation_statewide.R')
 
 # CSnippets
 
@@ -63,10 +62,10 @@ for (row in c(1:nrow(input_points))){
   pars$beta1 = r[['beta1']]
   pars$beta2_1 = r[['beta2_1']]
   pars$beta2_2 = r[['beta2_2']]
-  pars$beta2_3 = r[['beta2_2']]
+  pars$beta2_3 = r[['beta2_3']]
   pars$num_init_1 = r[['num_init_1']]
   pars$num_init_2 = r[['num_init_2']]
-  pars$num_init_1 = r[['num_init_3']]
+  pars$num_init_3 = r[['num_init_3']]
   n_projections = r[['num_sims']]
   
   sim_full <- simulate_pomp_covid(
@@ -93,12 +92,14 @@ for (row in c(1:nrow(input_points))){
   ## Generate new, lagged deaths that occurred outside of the hospital ---------------------------------------------------------------------
   sim_raw_IM <- sim_full$raw_simulation_output %>% select(contains(paste0("IM", pars$alpha_IM)))
   
+ 
   kappa_vec <- pars[grep("kappa",names(pars))] %>% unlist()
   psi1_vec <- pars[grep("psi1",names(pars))] %>% unlist()
   psi2_vec <- pars[grep("psi2",names(pars))] %>% unlist()
-  psi3_vec <- (1-psi1_vec - psi2_vec)
-  names(psi3_vec) <- paste0("psi3_", c(1:n_age_groups))
-  psi_non_hosp_vec <- (kappa_vec*psi3_vec*frac_non_hosp)/(1-frac_non_hosp)*(1-kappa_vec)
+  psi_hosp_ICU_vec <- pars[grep("psi3",names(pars))] %>% unlist()
+  psi_hosp_non_ICU_vec <- (1-psi1_vec - psi2_vec - psi_hosp_ICU_vec)
+  names(psi_hosp_non_ICU_vec) <- paste0("psi_hosp_non_ICU_vec_", c(1:n_age_groups))
+  psi_non_hosp_vec <- (kappa_vec*(psi_hosp_non_ICU_vec + psi_hosp_ICU_vec)*frac_non_hosp)/(1-frac_non_hosp)*(1-kappa_vec)
   names(psi_non_hosp_vec) <- paste0("psi_non_hosp_", c(1:n_age_groups))
   
   df_new_nonhosp_deaths <- data.frame(Time =sim_full$raw_simulation_output$time + time_lag_non_hosp_deaths) %>% 
