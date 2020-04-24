@@ -9,7 +9,7 @@ To parameterize contact rates, we used age-structured contact matrices for the U
 
 # Underreporting
 
-To account for underreporting in deaths for the time period between March 15 and March 28, we modified the approach of Weinberger et al.<sup>2</sup> to calculate the number of excess pneumonia and influenza deaths observed in that timeframe in Illinois. `underreporting_PnI_IL.csv` contains our estimate of the number of excess deaths which we use to calculate the fraction of covid deaths that were actually reported.
+To account for underreporting in deaths for the time period between March 15 and March 28, we modified the approach of Weinberger et al.<sup>2</sup> to calculate the number of excess pneumonia and influenza deaths observed in that timeframe in Illinois. `underreporting_PnI_IL.csv` contains our estimate of the number of excess deaths which we use to calculate the fraction of covid deaths that were actually reported. The final underreporting fractions we used in our model are in `frac_underreported.csv`. We also provide  `nu_scaling.csv` which can scale reporting rates directly if desired. Currently, all scaling values are set to 1 (i.e., no scaling).
 
 # References
 1. Prem K, Cook AR, Jit M (2017) Projecting social contact matrices in 152 countries using contact surveys and demographic data. PLOS Computational Biology 13(9): e1005697. https://doi.org/10.1371/journal.pcbi.1005697
