@@ -1,4 +1,4 @@
-# Forecasting for Illinois COVID-19 model
+# Forecasting for Illinois SARS-CoV-2 model
 
 ## File descriptions
 
