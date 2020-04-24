@@ -27,6 +27,8 @@ Third, the assumptions of the model may be wrong in important ways, which is why
 This process is ongoing, and we will continue to review new data and analyses as they become available in order to refine assumptions about the underlying process and the observed data.
 We will also continue to try different modeling approaches with different assumptions, to see if they converge on similar conclusions.
 
+### Model overview
+
 The model is a so-called “compartmental model,” because it tracks the number of people in different categories, or compartments, as shown in the diagram below.
 The model is based on a standard formulation known as an SEIR model, whose basic compartments consist of four groups: individuals that are susceptible to the virus (S); individuals that have been exposed and infected to the virus but are not yet able to infect others (E); individuals that are infectious, i.e., able to infect others (I); and recovered, individuals that are no longer infected and have gained immunity (R).
 We further subdivide these compartments in order to track asymptomatic vs. symptomatic infections, stages of hospitalization, and fatalities.
@@ -34,8 +36,6 @@ The model is also “age-specific,” meaning that we explicitly represent diffe
 
 We developed a model to infer key aspects of SARS-COV2 transmission in Illinois, and to forecast community spread, hospital and ICU burden, and mortality under current and hypothetical public health interventions. 
 
-
-### Model overview
 We introduce an adaptation of an age-structured SEIR model (Figure 1) that accounts for asymptomatic infection and mortality. Individuals are infected, but not infectious upon entry into the exposed class (E). Individuals that enter the asymptomatic class (A) can infect others in the community but will eventually clear the infection without ever showing symptoms of disease, while those that enter the presymptomatic class (P) will progress to symptomatic disease. Symptomatic infections are divided into mild cases, I<sub>M</sub>, which will resolve without hospital attention, and severe cases, I<sub>S</sub> that will require hospitalization. The class I<sub>H</sub> refers to severe cases that are hospitalized but not in the ICU, and the I<sub>C</sub> class refers to severe cases in the ICU. We explicitly track deaths from individuals in the hospitalized and ICU classes (I<sub>H4</sub> and I<sub>C</sub>, respectively). We account for deaths that occur outside of the hospital in our simulations via a scaling factor informed by the model parameters and by data on outside-of-hospital deaths from New York City (see [Parameters](./Parameters)).
 
 ![Figure 1](model_diagram.png)
