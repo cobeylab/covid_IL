@@ -31,7 +31,7 @@ Figure 3 shows the prevalence of symptomatic and asymptomatic infections and the
 ![Figure 3](./Forecasting/plots/summary_2_outputs.png)
 
 ### Navigating the repository 
-An overview of the regional demography and contact rates used for the analysis is available in [Data](./Data). The [Inference](./Inference) directory contains the code to infer the model parameters, and the [Forecasting](./Forecasting) directory contains the code to generate model forecasts based on the results of the inference.
+An overview of the regional demography and contact rates used for the analysis is available in the [Data](./Data) directory. An overview of the model parameters is available in the [Parameters](./Parameters) directory. The [Inference](./Inference) directory contains the code to infer the model parameters, and the [Forecasting](./Forecasting) directory contains the code to generate model forecasts based on the results of the inference.
   
 ### References
 1. King AA, Nguyen D and Ionides EL (2015) Statistical inference for partially observed Markov processes via the R package pomp. arXiv preprint arXiv:1509.00503.
