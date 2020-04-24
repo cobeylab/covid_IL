@@ -11,7 +11,7 @@ Best estimates place the mean incubation period of the virus at 6 days<sup>1,2,3
 
 ## Rate of recovery for mildly symptomatic infections: &gamma;<sub>m</sub>
 
-Based on viral isolation data from patients with mild disease, we estiamte that infectiousness of mildly symptomatic people wanes after 7.5 days (Wolfel).
+Based on viral isolation data from patients with mild disease, we estiamte that infectiousness of mildly symptomatic people wanes after 7.5 days<sup>7</sup>.
 
 ## Rate of recovery for asymptomatic infections: &eta;
 
@@ -37,4 +37,5 @@ medRxiv 2020.03.03.20029983; doi: https://doi.org/10.1101/2020.03.03.20029983
 4. Linton, N.M.; Kobayashi, T.; Yang, Y.; Hayashi, K.; Akhmetzhanov, A.R.; Jung, S.-M.; Yuan, B.; Kinoshita, R.; Nishiura, H. Incubation Period and Other Epidemiological Characteristics of 2019 Novel Coronavirus Infections with Right Truncation: A Statistical Analysis of Publicly Available Case Data. J. Clin. Med. 2020, 9, 538. 
 5. Du Z, Xu X, Wu Y, Wang L, Cowling BJ, Ancel Meyers L. Serial interval of COVID-19 among publicly reported confirmed cases. Emerg Infect Dis. 2020 Jun. https://doi.org/10.3201/eid2606.200357
 6. Nishiura H, Linton NM, Akhmetzhanov AR. Serial interval of novel coronavirus (COVID-19) infections. Int. J. Infect. Dis. 2020. doi: 10.1016/j.ijid.2020.02.060
+7. Wölfel, R., Corman, V.M., Guggemos, W. et al. Virological assessment of hospitalized patients with COVID-2019. Nature (2020). https://doi.org/10.1038/s41586-020-2196-x
 
