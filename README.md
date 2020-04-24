@@ -24,7 +24,9 @@ We incorporate interventions as scaling factors on the transmission rate for all
 1. The absence of shelter in place
 2. Lifting shelter in place on a pre-determined date. 
 
---- FORECASTING FIG TO GO HERE------
+Forecasts for Illinois through July 31, 2020 under the three scenarios are shwon in Figure 2. 
+![Illinois projections](./Forecasting/plots/model_diagram.png)
+
 
 ### Navigating the repository 
 The [Inference](./Inference) directory contains the code to infer the model parameters, and the [Forecasting](./Forecasting) directory contains the code to generate model forecasts based on the results of the inference.An overview of the regional demography and contact rates used for the analysis is available in [Data](./Data).

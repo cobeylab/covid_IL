@@ -1,0 +1,92 @@
+---
+title: "Simulate from maximum likelihood parameter estimates"
+author: Sylvia Ranjeva
+date: April 21, 2020
+output: html_document
+---
+Model with time-varying under-reporting of deaths March 13-March 28, using estimate of under-reproting based on excess P&I mortality from Weinberger et al.
+
+Code to simulate and compare three different intervention scenarios:
+1. Shelter in place indefinitely
+2. Shelter in place lifted 5/1
+3. Never shelter in place
+
+```{r}
+require(dplyr)
+require(pomp)
+require(ggplot2)
+require(magrittr)
+require(lubridate)
+require(MASS)
+require(reshape2)
+require(dplyr)
+require(cowplot)
+require(scales)
+
+
+select <- dplyr::select
+rename <- dplyr::rename
+summarize <- dplyr::summarise
+contains <- dplyr::contains
+
+root <- '../../../../'
+source(file.path(root, '_covid_root.R'))
+covid_set_root(root)
+
+input_points_file = "../../../inference/April_22/parallelization_test/consolidated.sample_from_surface.csv"
+source("input_file_specification.R")
+
+# Projection specifications: all projections
+reference_date <- as.Date("2020-01-14") # All numeric times in reference to this date 
+end_projection_date <- as.Date("2020-07-31")
+start_projection_date <- as.Date("2020-03-01")
+deltaT = 0.1 # timestep for projections 
+
+# Modify interventions from current values 
+modify_interventions = F  #change interventions from default params for projections?
+scalework = 0.6 # If changing interventions, specify here. 
+scaleschool = 0 
+scalehome = 1
+scaleother = 0.5
+frac_non_hosp = 0.21 # Fraction of deaths that occur outside of the hospital
+time_lag_non_hosp_deaths = 10 # days from infection to non-hospitalized deaths
+
+## Scenario 1: simulate assuming interventions in place indefinitely 
+intervention_start_date <- as.Date("2020-03-16")
+intervention_end_date <- end_projection_date
+output_filename = "./sim_projections/projections_indefinite"
+
+t_start <- Sys.time()
+source("inference_to_simulation_statewide.R")
+t_end <- Sys.time()
+print(t_end - t_start)
+
+## Scenario 2: simulate assuming that interventions were lifted 
+intervention_start_date <- as.Date("2020-05-01")
+intervention_end_date <- end_projection_date
+output_filename = "./sim_projections/projections_lifted"
+
+t_start <- Sys.time()
+source("inference_to_simulation_statewide.R")
+t_end <- Sys.time()
+print(t_end - t_start)
+
+## Scenario 3: simulate assuming that interventions had never occurred
+intervention_start_date <- as.Date(end_projection_date + 1) # set a time after the end of simulations
+intervention_end_date <- as.Date(end_projection_date + 2)
+output_filename = "./sim_projections/projections_never"
+
+t_start <- Sys.time()
+source("inference_to_simulation_statewide.R")
+t_end <- Sys.time()
+print(t_end - t_start)
+
+
+## Plot results 
+file_path = "./sim_projections/"
+plot_filename <- "outputs_april_24.pdf"
+intervention_scenarios <- c("indefinite", "lifted", "never")
+
+
+```
+
