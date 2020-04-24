@@ -1,7 +1,7 @@
 # Forecasting SARS-CoV-2 dynamics for the state of Illinois
 
 *Contributors (alphabetically listed): Phil Arevalo, Ed Baskerville, Spencer Carran, Sarah Cobey, Katelyn Gostic, Lauren McGough, Sylvia Ranjeva, & Frank Wen 
-*Correspondence to: [Sarah Cobey](cobey@uchicago.edu)
+*Correspondence to: [Sarah Cobey](cobey@uchicago.edu), [Cobey lab](https://cobeylab.uchicago.edu)
 
 ### Introduction 
 In order to better understand the COVID-19 epidemic in Illinois, we have developed a mathematical model representing the process of contact and transmission between people, the progression of disease, and the movement of people through the hospital system.
