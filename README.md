@@ -24,10 +24,6 @@ Because the specific, person-to-person details of interaction are essentially un
 Because observed data is a highly incomplete picture of reality, it places inherent limits on what we can learn about the underlying epidemic process.
 And because the assumptions of the model may be wrong in important ways, there is uncertainty in the model structure, which is why it is important to test different models, and why it is important for different groups of people to engage in parallel, independent modeling efforts.
 
-This process is ongoing, and we will continue to review new data and analyses as they become available in order to refine assumptions about the underlying process and the observed data.
-We will also continue to try different modeling approaches with different assumptions, to see how different assumptions affect conclusions.
-And we will continue to engage in a dialogue with other scientists and modelers, and learn from what they are doing.
-
 ### Model overview
 
 We developed a model to infer key aspects of SARS-CoV-2 transmission in Illinois, and to forecast community spread, hospital and ICU burden, and mortality under current and hypothetical public health interventions. 
@@ -46,6 +42,9 @@ To incorporate demographic stochasticity, the model is implemented in a sub-day 
 ### Data
 We model the state-level dynamics of SARS-CoV-2 via three distinct geographic regions, as described in [Data](./Data). The model is fitted to in-hospital deaths reported by the New York Times from March 15 to March 24, 2020 and to in-hospital deaths reported by the Illinois Department of Publc Health from March 24, 2020 onwards. 
 
+### Measurement model
+We do not observe all COVID-19 deaths due to limitations in testing capacity and the false negative rate of the test. We therefore include a measurement model that describes the probability of observing a death based on these factors. 
+
 ### Inference
 For each region in Illinois, we infer the transmission rate of SARS-CoV-2 before and after public health interventions, as well as the number of individuals infected at the beginning of the simulations (on March 1, 2020). We fix all other parameters based on values chosen from the literature, as described in the [Parameters](./Parameters) directory. 
 We fitted the model to the data using maximum likelihood methods for partially observed Markov process (POMP) models (details in [Inference](./Inference)).
@@ -60,7 +59,20 @@ We incorporate interventions as scaling factors on the transmission rate for all
 
 1. Lifting shelter in place on May 1, 2020 ("lifted")
 2. The absence of shelter in place ("never")
-  
+
+### Caveats
+
+Our modeling process is ongoing, and we will continue to review new data and analyses as they become available in order to refine assumptions about the underlying process and the observed data.
+We will also continue to try different modeling approaches with different assumptions, to see how different assumptions affect conclusions.
+And we will continue to engage in a dialogue with other scientists and modelers, and learn from what they are doing.
+
+Here, we highlight some assumptions of our model.
+* We assume that forward transmission ends with hospitalization. 
+* We do not model importation of cases beyond the start of simulations (March 1).
+* The geographic regions of Illinois are independent (i.e., transmission does not occur between regions).
+* Interventions occur immediately at a fixed intensity.
+* Many parameters in our model are fixed based on existing literature (see [Parameters](./Parameters)).
+
 ### References
 1. King AA, Nguyen D and Ionides EL (2015) Statistical inference for partially observed Markov processes via the R package pomp. arXiv preprint arXiv:1509.00503.
 
