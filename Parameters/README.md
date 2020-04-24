@@ -1,6 +1,6 @@
 # Parameters for Illinois COVID-19
 
-We informed the value of fixed parameters using recent literature on viral incubation period<sup>1,2,3,4</sup>, serial interval<sup>3,5,6</sup>, infectiousness of mildly symptomatic people<sup>7</sup>, asymptomatic infections<sup>8</sup>, infection fatality rate<sup>9</sup>, case fatality rate<sup>9</sup>, and PCR test sensitivity <sup>10,11</sup>. Parameters that determine how hospitalized people are partitioned (&psi;<sub>1,2,3,4</sub>) and the rates at which they move through the hospital to death or recovery (&zeta;<sub>crit.</sub>, &gamma;<sub>hosp.</sub>, &mu;<sub>crit.</sub>, &mu;<sub>hosp.</sub>)were based on current data from a hospital system in Illinois. 
+We informed the value of fixed parameters using recent literature on viral incubation period<sup>1,2,3,4</sup>, serial interval<sup>3,5,6</sup>, infectiousness of mildly symptomatic people<sup>7</sup>, asymptomatic infections<sup>8</sup>, infection fatality rate<sup>9</sup>, case fatality rate<sup>9</sup>, and PCR test sensitivity <sup>10,11</sup>. Parameters that determine how hospitalized people are partitioned (&psi;<sub>1,2,3,4</sub>) and the rates at which they move through the hospital to death or recovery (&zeta;<sub>crit.</sub>, &gamma;<sub>hosp.</sub>, &mu;<sub>crit.</sub>, &mu;<sub>hosp.</sub>) were based on current data from a hospital system in Illinois. 
 
 We are actively reviewing the literature and will update these parameters as better estimates become available.
 
