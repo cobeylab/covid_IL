@@ -25,11 +25,14 @@ We incorporate interventions as scaling factors on the transmission rate for all
 2. The absence of shelter in place ("never")
 
 Figure 2 gives forecasts of new symptomatic and asymptomatic infections, mortality, and hospitalizations for Illinois through July 31, 2020 under the three intervention scenarios.
-![Figure 2](./Forecasting/plots/summary_1_outputs.png)
+An overview of the regional demography and contact rates used for the analysis is available in [Data](./Data).
+<!--[Figure 2](./Forecasting/plots/summary_1_outputs.png)-->
+FIGURE WILL GO HERE.
 
 Figure 3 shows the prevalence of symptomatic and asymptomatic infections and the fraction of susceptible individuals in Illinois through July 31, 2020 under the three intervention scenarios. 
-![Figure 3](./Forecasting/plots/summary_2_outputs.png)
+<!--[Figure 3](./Forecasting/plots/summary_2_outputs.png)-->
 
+FIGURE WILL GO HERE.
 ### Navigating the repository 
 An overview of the regional demography and contact rates used for the analysis is available in the [Data](./Data) directory. An overview of the model parameters is available in the [Parameters](./Parameters) directory. The [Inference](./Inference) directory contains the code to infer the model parameters, and the [Forecasting](./Forecasting) directory contains the code to generate model forecasts based on the results of the inference.
   
