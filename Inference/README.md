@@ -1,4 +1,4 @@
-# Inference for Illinois COVID-19 model
+# Inference for Illinois SARS-CoV-2 model
 
 We infer key transmission parameters by fitting the model to data, with other model parameters fixed at values informed by existing literature (see [Parameters](../Parameters)). Specifically, our goal is to infer the number of people initially infected in each region of Illinois (see [Data](../Data)) along with the pre- and post-intervention transmission rates. We do this by finding the set of parameters that maximizes the likelihood of our data, the number of observed hospitalized deaths per day in each region.
 
@@ -8,7 +8,7 @@ Given a set of parameters, we can simulate both the hidden and observed states o
 
 * `rprocess_interventionbeta_IH4.c`: Process model that describes how people move through compartments at each timestep.
 * `initializer_compartment_distribute_IH4.c`: Initializer that places people into infectious classes at the beginning of the simulation.
-* `dmeasure_deaths_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths. Observed deaths at each timestep are a sample of those who have died in the hospital. We assume that we do not observe all covid deaths because testing does not detect all infections.
+* `dmeasure_deaths_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths. Observed deaths at each timestep are a sample of those who have died in the hospital. We assume that we do not observe all COVID-19 deaths because testing does not detect all infections.
 
 ## Run script descriptions
 * `inference_functions.R`: Essential functions for creating and using `pomp` objects. 
