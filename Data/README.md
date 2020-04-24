@@ -1,4 +1,4 @@
-# Data for Illinois COVID-19 model
+# Data for Illinois SARS-CoV-2 model
 
 ## Demography
 `IL_population_EMS_regions_1-2.csv`, `IL_population_EMS_regions_3-6.csv`, and `IL_population_EMS_regions_7-11.csv` are the July 2018 Census population estimates in 10-year age bins for EMS regions 1-2, 3-6, and 7-11 ([IDPH](https://www.dph.illinois.gov/topics-services/emergency-preparedness-response/ems/preHospData)). We divided the state into these regions based on correlations in their observed incident death dynamics.
