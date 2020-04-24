@@ -5,4 +5,12 @@
 
 
 # Contact data
-To parameterize contact rates, we used age-structured contact matrices for the United States from [Prem, et al. 2017. PLoS Comp. Bio.](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005697). There are four separate matrices describing contacts at home, school, work, and other locations. We reaggregated these matrices into 10-year age bins and provide them in `formatted_contacts_IL.RData`.
+To parameterize contact rates, we used age-structured contact matrices for the United States from Prem, et al. 2017<sup>1</sup>. There are four separate matrices describing contacts at home, school, work, and other locations. We reaggregated these matrices into 10-year age bins and provide them in `formatted_contacts_IL.RData`.
+
+# Underreporting
+
+To account for underreporting in deaths for the time period between March 15 and March 28, we modified the approach of Weinberger et al.<sup>2</sup> to calculate the number of excess pneumonia and influenza deaths observed in that timeframe in Illinois. `underreporting_PnI_IL.csv` contains our estimate of the number of excess deaths which we use to calculate the fraction of covid deaths that were actually reported.
+
+# References
+1. Prem K, Cook AR, Jit M (2017) Projecting social contact matrices in 152 countries using contact surveys and demographic data. PLOS Computational Biology 13(9): e1005697. https://doi.org/10.1371/journal.pcbi.1005697
+2. Daniel Weinberger, Ted Cohen, Forrest Crawford, Farzad Mostashari, Don Olson, Virginia E Pitzer, Nicholas G Reich, Marcus Russi, Lone Simonsen, Annie Watkins, Cecile Viboud. Estimating the early death toll of COVID-19 in the United States. medRxiv 2020.04.15.20066431; doi: https://doi.org/10.1101/2020.04.15.20066431 
