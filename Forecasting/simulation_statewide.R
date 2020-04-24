@@ -1,4 +1,14 @@
-covid_source('utils.R')
+#' Read a whole file.
+read_text_file <- function(path) {
+  readChar(path, file.info(path)$size)
+}
+
+
+#' Read a Csnippet
+read_Csnippet <- function(path) {
+  library(pomp)
+  Csnippet(read_text_file(path))
+}
 
 #' Simulate COVID pomp model
 simulate_pomp_covid <- function(
@@ -14,9 +24,9 @@ simulate_pomp_covid <- function(
   seed = NULL,
   format = 'data.frame',
   obsnames = NULL,
-  rprocess_Csnippet='rprocess.c',
+  rprocess_Csnippet= NULL,
   initialize = T,
-  rinit_Csnippet='initializer.c',
+  rinit_Csnippet= NULL,
   pfilter_traj_params = NULL
 ) {
   library(pomp)
@@ -399,6 +409,7 @@ process_pomp_covid_output <- function(sim_result) {
       startsWith(as.character(Compartment), "IH1") ~ "IH",
       startsWith(as.character(Compartment), "IH2") ~ "IH",
       startsWith(as.character(Compartment), "IH3") ~ "IH",
+      startsWith(as.character(Compartment), "IH4") ~ "IH",
       startsWith(as.character(Compartment), "IC2") ~ "IC",
       startsWith(as.character(Compartment), "IC3") ~ "IC",
       startsWith(as.character(Compartment), "R") ~ "R",

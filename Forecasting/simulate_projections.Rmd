@@ -1,6 +1,5 @@
 ---
 title: "Simulate from maximum likelihood parameter estimates"
-author: Sylvia Ranjeva
 output: html_document
 ---
 This code produces simulated projections of IL coronavirus dynamcis from the best-fit model parameters.  We simulate the dynamics under three different intervention scenarios:
