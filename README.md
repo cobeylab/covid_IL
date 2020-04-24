@@ -19,14 +19,16 @@ The model is fitted to in-hospital deaths reported by the New York Times from Ma
 
 ### Evaluating the effects of public health interventions
 Our model can evaluate the effects of public health interventions of varying forms, strenghts, and durations. 
-We incorporate interventions as scaling factors on the transmission rate for all infected individuals, and as reductions in  age- and setting-specific contact rates. Our baseline model scenario reflects the enactment of "shelter in place" interventions in Illinois beginning on March 16, 2020. This involves an inferred reduction in transmission rate, a 100% reduction in at-school contacts, a 40% reduction in at-work contacts, and a 60% reduction in all other contacts occurring outside of the home. We also consider two hypothetical scenarios:
+We incorporate interventions as scaling factors on the transmission rate for all infected individuals, and as reductions in  age- and setting-specific contact rates. Our baseline model scenario reflects the enactment of "shelter in place" interventions in Illinois beginning on March 16, 2020, and extended indefinitely ("indefinite"). This involves an inferred reduction in transmission rate, a 100% reduction in at-school contacts, a 40% reduction in at-work contacts, and a 60% reduction in all other contacts occurring outside of the home. We also consider two hypothetical scenarios:
 
-1. The absence of shelter in place
-2. Lifting shelter in place on a pre-determined date. 
+1. The absence of shelter in place ("never")
+2. Lifting shelter in place on a pre-determined date ("lifted")
 
-Forecasts for Illinois through July 31, 2020 under the three scenarios are shwon in Figure 2. 
-![Illinois projections](./Forecasting/plots/model_diagram.png)
+Figure 2 gives forecasts of new symptomatic and asymptomatic infections, mortality, and hospitalizations for Illinois through July 31, 2020 under the three intervention scenarios.
+![Illinois projections](./Forecasting/plots/summary_1_outputs.png)
 
+Figure 3 shows the prevalence of symptomatic and asymptomatic infection and the fraction of susceptible individuals in Illinois through July 31, 2020 under the three intervention scenarios. 
+![Illinois projections](./Forecasting/plots/summary_2_outputs.png)
 
 ### Navigating the repository 
 The [Inference](./Inference) directory contains the code to infer the model parameters, and the [Forecasting](./Forecasting) directory contains the code to generate model forecasts based on the results of the inference.An overview of the regional demography and contact rates used for the analysis is available in [Data](./Data).
