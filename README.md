@@ -18,11 +18,11 @@ We model the state-level dynamics of COVID-19 via three distinct regions, as des
 The model is fitted to in-hospital deaths reported by the New York Times from March 15 to March 24, 2020 and to in-hospital deaths reported by the Illinois Department of Publc Health from March 24, 2020 onwards. We fitted the model to the data using maximum likelihood methods for partially observed Markov process (POMP) models (details in [Inference](./Inference)).
 
 ### Evaluating the effects of public health interventions
-Our model can evaluate the effects of public health interventions of varying forms, strenghts, and durations. 
+Our model can evaluate the effects of public health interventions of varying forms, strengths, and durations. 
 We incorporate interventions as scaling factors on the transmission rate for all infected individuals, and as reductions in  age- and setting-specific contact rates. Our baseline model scenario reflects the enactment of "shelter in place" interventions in Illinois beginning on March 16, 2020, and extended indefinitely ("indefinite"). This involves an inferred reduction in transmission rate, a 100% reduction in at-school contacts, a 40% reduction in at-work contacts, and a 60% reduction in all other contacts occurring outside of the home. We also consider two hypothetical scenarios:
 
-1. The absence of shelter in place ("never")
-2. Lifting shelter in place on a pre-determined date ("lifted")
+1. Lifting shelter in place on a pre-determined date ("lifted")
+2. The absence of shelter in place ("never")
 
 Figure 2 gives forecasts of new symptomatic and asymptomatic infections, mortality, and hospitalizations for Illinois through July 31, 2020 under the three intervention scenarios.
 ![Figure 2](./Forecasting/plots/summary_1_outputs.png)
