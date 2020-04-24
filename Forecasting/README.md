@@ -1,4 +1,5 @@
 # Forecasting for Illinois COVID-19 model
+
 ## File descriptions
 
 * `simulate_projections.Rmd`: R-markdown file to simulate and plot forecasts for the state of IL based on the inference results.
