@@ -1,5 +1,5 @@
-# Scripts to generate model forecasts
-# File descriptions
+# Forecasting for Illinois COVID-19 model
+## File descriptions
 
 * `simulate_projections.Rmd`: R-markdown file to simulate and plot forecasts for the state of IL based on the inference results.
 * `input_file_specification.R`: R script to read in files for simulation. Called within `simulate_projections.Rmd`
