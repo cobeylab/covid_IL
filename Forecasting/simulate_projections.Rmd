@@ -84,7 +84,7 @@ print(t_end - t_start)
 
 ## Plot results 
 file_path = "./sim_projections/"
-plot_filename <- "outputs_april_24.pdf"
+plot_filename <- "outputs.png"
 intervention_scenarios <- c("indefinite", "lifted", "never")
 
 
