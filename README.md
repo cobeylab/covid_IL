@@ -1,8 +1,8 @@
 # Forecasting SARS-CoV-2 dynamics for the state of Illinois
 
-Contributors (alphabetically listed): Phil Arevalo, Ed Baskerville, Spencer Carran, Sarah Cobey, Katelyn Gostic, Lauren McGough, Sylvia Ranjeva, & Frank Wen
+Contributors from the [Cobey lab](https://cobeylab.uchicago.edu) (listed alphabetically): Phil Arevalo, Ed Baskerville, Spencer Carran, Sarah Cobey, Katelyn Gostic, Lauren McGough, Sylvia Ranjeva, & Frank Wen
 
-Correspondence to: cobey@uchicago.edu, [Cobey lab](https://cobeylab.uchicago.edu)
+Correspondence to cobey@uchicago.edu
 
 
 ### Model overview
