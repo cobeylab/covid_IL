@@ -12,7 +12,7 @@ We transformed these matrices into 10-year age bins and provide them in `formatt
 
 ## Underreporting
 
-To account for underreported deaths, we modified the approach of Weinberger et al.<sup>2</sup> to calculate the number of excess pneumonia and influenza (P & I) deaths observed in that timeframe in Illinois.
+To account for underreported deaths, we modified the approach of Weinberger et al.<sup>2</sup> to calculate the number of excess pneumonia and influenza (P & I) deaths observed in different weeks in Illinois.
 The `underreporting_PnI_IL.csv` file contains estimates of the number of excess P & I deaths by week.
 By comparing these estimates to the number of observed COVID-19 deaths, we can estimate the fraction of COVID-19 deaths that were not reported.
 With this approach, we find no underreporting of deaths after March 28.
