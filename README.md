@@ -18,7 +18,7 @@ When individuals are infected, they enter the latent or exposed class (E), where
 Individuals that enter the asymptomatic class (A) can infect others in the community, but they eventually recover without showing symptoms.
 People who enter the presymptomatic infectious class (P) eventually develop symptoms.
 Symptomatic infections are divided into mild cases, I<sub>M</sub>, which resolve without hospital attention, and severe cases, I<sub>S</sub>, which require hospitalization.
-Severe cases can be in the ICU (I<sub>C</sub) or not (class I<sub>H</sub>), and can die.
+Severe cases can be in the ICU (I<sub>C</sub>) or not (class I<sub>H</sub>), and can die.
 Deaths that occur outside of the hospital are estimated using a scaling factor informed by the model parameters and other information on the frequency of COVID-19 deaths outside hospitals (see [Parameters](./Parameters)).
 
 ![Figure 1](model_diagram.png)
