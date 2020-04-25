@@ -1,8 +1,13 @@
 # Inference for Illinois SARS-CoV-2 model
 
-We infer key transmission parameters by fitting the model to data, with other model parameters fixed at values informed by existing literature (see [Parameters](../Parameters)). Specifically, our goal is to infer the number of people initially infected in each region of Illinois (see [Data](../Data)) along with the pre- and post-intervention transmission rates. We do this by finding the set of parameters that maximizes the likelihood of our data, the number of observed hospitalized deaths per day in each region.
+We fitted the number of people initially infected in each region of Illinois (see [Data](../Data)) and the pre- and post-intervention transmission rates to the number of observed hospitalized deaths per day in each region.
+Other parameters were fixed ([Parameters](.../Parameters)).
 
-Given a set of parameters, we can simulate both the hidden and observed states of the model. The likelihood of a given parameter set is then a measure of how well a given set of parameters can reproduce the observed data. To do this, we use a [particle filtering approach](https://kingaa.github.io/sbied/pfilter/pfilter.html) implemented in the [`pomp` R package](https://kingaa.github.io/pomp/). In order to find the best-fitting set of parameters, we use the [iterated filtering method](https://kingaa.github.io/sbied/mif/mif.html) also implemented in `pomp`. Briefly, through an iterated process of simulating the data and then perturbing parameter values, the best set of parameter values can be found.
+From a set of parameters, we can simulate both the hidden (latent) states (e.g., underlying fraction infected and immune) and observations (e.g., recorded COVID-19 deaths) of the model.
+The likelihood of a parameter set measures how well it can reproduce the observed data.
+To calculate the likelihood, we use a [particle filter](https://kingaa.github.io/sbied/pfilter/pfilter.html) implemented in the [`pomp` R package](https://kingaa.github.io/pomp/).
+To find the best-fitting set of parameters, we use the [iterated filtering method](https://kingaa.github.io/sbied/mif/mif.html) also implemented in `pomp`.
+Briefly, through repeated rounds of simulating the dynamics and then perturbing parameter values, this approach can find the parameter values that can best reproduce the data.
 
 ## Model file descriptions
 
