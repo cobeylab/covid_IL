@@ -24,14 +24,14 @@ Probabilities determine the fraction of people following specific paths between 
 The model is stochastic, in that in each time step, the number of individuals transitioning between compartments is drawn randomly based on these rate and probability parameters.
 
 ### Data
-The model is fitted to deaths reported by the New York Times from March 15 to March 24 and to in-hospital deaths reported by the Illinois Department of Public Health (IDPH) after March 24.
-Deaths before March 15 are excluded due to concerns about excessive underreporting.
+The model is fitted to deaths reported by the New York Times from March 15 to March 24, in-hospital deaths reported by the Illinois Department of Public Health (IDPH) after March 24, and confirmed cases in the ICU from April 7 onward reported by IDPH.
+Deaths before March 15 and ICU cases before April 7 are excluded due to concerns about excessive underreporting.
 The New York Times data draw from publicly available data shared by IDPH.
-The data we received from IDPH track in-hospital deaths precisely from March 24 onward.
+The data we received from IDPH track in-hospital deaths precisely from March 24 onward and confirmed cases in the ICU from April 7 onward.
 To better approximate dynamics for the entire state, epidemic dynamics are estimated separately for three geographic subregions distinguished by the similarity of their epidemic activity to date ([Data](./Data)).
 
 ### Observation model
-Limited testing capacity and false negatives mean that not all deaths from COVID-19 infection are observed.
+Limited testing capacity and false negatives mean that not all deaths and ICU admissions from COVID-19 infection are observed.
 Although the model tracks all underlying infections and deaths, it assumes only a fraction will be confirmed and counted.
 
 ### Inference
