@@ -3,7 +3,7 @@ const double *ObsDeaths = &ObsDeaths_1;
 const int num_age_groups = n_age_groups;
 double lik_total = (give_log) ? 0 : 1;
 
-for (int region=1; region<n_regions; region++){
+for (int region=0; region<n_regions; region++){
     double region_lik;
 
     if (ISNA(ObsDeaths[region])) {
