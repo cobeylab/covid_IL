@@ -27,18 +27,17 @@ args = commandArgs(trailingOnly=TRUE)
 n_reps_pfilter=5
 n_particles_pfilter=5000
 
-root <- '../../../../'
+root <- '../'
 source(file.path(root, '_covid_root.R'))
 covid_set_root(root)
 
-source(covid_get_path('POMP/inference/statewide/inference_statewide.R'))
-
-initFile = covid_get_path('POMP/model_scripts/statewide/initializer_compartment_distribute_IH4.c')
-rprocFile = covid_get_path('POMP/model_scripts/statewide/rprocess_interventionbeta_IH4.c')
-nu_scales_file = covid_get_path('POMP/data/nu_scaling.csv')
-fraction_underreported_file = covid_get_path('POMP/inference/April_28/frac_underreported.csv')
-default_par_file = './default_parameter_values.csv'
-contact_filename = covid_get_path('POMP/data/formatted_contacts_IL.RData')
+source(covid_get_path('Inference/inference_functions.R'))
+initFile = covid_get_path('Inference/initializer_compartment_distribute_IH4.c')
+rprocFile = covid_get_path('Inference/rprocess_interventionbeta_IH4.c')
+nu_scales_file = covid_get_path('Data/nu_scaling.csv')
+fraction_underreported_file = covid_get_path('Data/frac_underreported.csv')
+default_par_file = covid_get_path('Parameters/parameter_values.csv')
+contact_filename = covid_get_path('Data/formatted_contacts_IL.RData')
 deltaT = 0.1
 
 
