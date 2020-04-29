@@ -1,4 +1,4 @@
-## Run pfilter on a grid of points, can be implemented in parallel on the cluster 
+## Run mif searches, can be implemented in parallel on the cluster 
 ## Sylvia Ranjeva, Phil Arevalo
 ## April 2020
 ## -----------------------------------------------------
@@ -25,18 +25,18 @@ args = commandArgs(trailingOnly=TRUE)
 
 
 n_reps_pfilter=5
-n_particles_pfilter=2000
+n_particles_pfilter=5000
 
 root <- '../../../../'
 source(file.path(root, '_covid_root.R'))
 covid_set_root(root)
 
-source('./inference_functions.R')
+source(covid_get_path('POMP/inference/statewide/inference_statewide.R'))
 
-initFile = covid_get_path('POMP/model_scripts/statewide/cinitializer_compartment_distribute_IH4.c')
+initFile = covid_get_path('POMP/model_scripts/statewide/initializer_compartment_distribute_IH4.c')
 rprocFile = covid_get_path('POMP/model_scripts/statewide/rprocess_interventionbeta_IH4.c')
 nu_scales_file = covid_get_path('POMP/data/nu_scaling.csv')
-fraction_underreported_file = covid_get_path('POMP/inference/April_21/time_varying_underreporting/frac_underreported.csv')
+fraction_underreported_file = covid_get_path('POMP/inference/April_28/frac_underreported.csv')
 default_par_file = './default_parameter_values.csv'
 contact_filename = covid_get_path('POMP/data/formatted_contacts_IL.RData')
 deltaT = 0.1
@@ -66,25 +66,29 @@ scaleother=as.numeric(args[18])
 num_cores=as.numeric(args[19])
 maxjobs=as.numeric(args[20])
 
-num_points = maxjobs * 16
+min_data_time_ICU = as.numeric(args[21])
+
+num_points = 5000
 cl <- makeCluster(num_cores)
 registerDoParallel(cl)
 
-lower_pars = c(beta1=0.01, 
-  beta2_1=0.003, 
-  beta2_2=0.003, 
-  beta2_3=0.003, 
-  num_init_1=1,
-  num_init_2=1,
-  num_init_3=50)
 
-upper_pars = c(beta1=0.07, 
-  beta2_1=0.02, 
-  beta2_2=0.02, 
-  beta2_3=0.02, 
-  num_init_1=2000,
-  num_init_2=2000,
-  num_init_3=8000)
+# initialize design
+lower_pars = c(beta1=0.018, 
+  beta2_1=0.0055, 
+  beta2_2=0.0055, 
+  beta2_3=0.007, 
+  num_init_1=70,
+  num_init_2=70,
+  num_init_3=1500)
+
+upper_pars = c(beta1=0.024, 
+  beta2_1=0.009, 
+  beta2_2=0.009, 
+  beta2_3=0.009, 
+  num_init_1=200,
+  num_init_2=200,
+  num_init_3=3500)
 
 design = sobolDesign(lower=lower_pars, 
   upper=upper_pars, 
@@ -125,21 +129,27 @@ n_age_groups = nrow(population1)
 
 
 # Load real data, assume read in from civis
-data_1 = get_civis_data(data_filename_1)  %>% mutate(ObsDeaths_1=ObsDeaths) %>% select(time, ObsDeaths_1)
-data_2 = get_civis_data(data_filename_2)  %>% mutate(ObsDeaths_2=ObsDeaths) %>% select(time, ObsDeaths_2)
-data_3 = get_civis_data(data_filename_3)  %>% mutate(ObsDeaths_3=ObsDeaths) %>% select(time, ObsDeaths_3)
+data_1 = get_civis_data(data_filename_1)  %>% mutate(ObsDeaths_1=ObsDeaths, ObsICU_1=ObsICU) %>% select(time, ObsDeaths_1, ObsICU_1)
+data_2 = get_civis_data(data_filename_2)  %>% mutate(ObsDeaths_2=ObsDeaths, ObsICU_2=ObsICU) %>% select(time, ObsDeaths_2, ObsICU_2)
+data_3 = get_civis_data(data_filename_3)  %>% mutate(ObsDeaths_3=ObsDeaths, ObsICU_3=ObsICU) %>% select(time, ObsDeaths_3, ObsICU_3)
 
 
 data = merge(data_1, data_2, by='time')
 data = merge(data, data_3, by='time')
 
 # Add NAs if necessary
+
+
 data <- data %>% filter(time>=simstart, time<=simend) %>% 
                  mutate(
                         ObsDeaths_1=ifelse(time<min_data_time, NA, ObsDeaths_1),
                         ObsDeaths_2=ifelse(time<min_data_time, NA, ObsDeaths_2),
-                        ObsDeaths_3=ifelse(time<min_data_time, NA, ObsDeaths_3)) %>%
-                select(ObsDeaths_1, ObsDeaths_2, ObsDeaths_3, time)
+                        ObsDeaths_3=ifelse(time<min_data_time, NA, ObsDeaths_3),
+
+                        ObsICU_1=ifelse(time<min_data_time_ICU, NA, ObsICU_1),
+                        ObsICU_2=ifelse(time<min_data_time_ICU, NA, ObsICU_2),
+                        ObsICU_3=ifelse(time<min_data_time_ICU, NA, ObsICU_3)) %>%
+                select(ObsDeaths_1, ObsDeaths_2, ObsDeaths_3, ObsICU_1, ObsICU_2, ObsICU_3, time)
 
 print(data)
 
@@ -174,8 +184,8 @@ foreach(jobid=loopstart:loopend,
     if (jobid <= num_points){
       pars$beta1 = design[jobid, 'beta1']
       pars$beta2_1 = design[jobid, 'beta2_1']
-      pars$beta2_2 = design[jobid, 'beta2_1']
-      pars$beta2_3 = design[jobid, 'beta2_1']
+      pars$beta2_2 = design[jobid, 'beta2_2']
+      pars$beta2_3 = design[jobid, 'beta2_3']
       pars$num_init_1 = round(design[jobid, 'num_init_1'])
       pars$num_init_2 = round(design[jobid, 'num_init_2'])
       pars$num_init_3 = round(design[jobid, 'num_init_3'])
@@ -197,7 +207,7 @@ foreach(jobid=loopstart:loopend,
           data=data,
           fitstart=simstart,
           time_column='time',
-          obsnames=c('ObsDeaths_1', 'ObsDeaths_2', 'ObsDeaths_3'),
+          obsnames=c('ObsDeaths_1', 'ObsDeaths_2', 'ObsDeaths_3', 'ObsICU_1', 'ObsICU_2', 'ObsICU_3'),
           transformations=transformation,
           inherit_parameters=FALSE
           )

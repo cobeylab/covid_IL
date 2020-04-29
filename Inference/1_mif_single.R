@@ -23,27 +23,27 @@ args = commandArgs(trailingOnly=TRUE)
 
 n_reps_pfilter=2000
 n_particles_pfilter=5
-n_mif = 100
+n_mif = 60
 rw_vec = rw.sd(beta1 = 0.02,
                beta2_1 = 0.02,
                beta2_2 = 0.02,
                beta2_3 = 0.02,
-               num_init_1 =ivp(0.02),
-               num_init_2 =ivp(0.02),
-               num_init_3 =ivp(0.02)) 
-cooling_rate = 0.8
+               num_init_1 =ivp(0.1),
+               num_init_2 =ivp(0.1),
+               num_init_3 =ivp(0.1)) 
+cooling_rate = 0.75
 n_particles_mif = 4000
 
 root <- '../../../../'
 source(file.path(root, '_covid_root.R'))
 covid_set_root(root)
 
-source('./inference_functions.R')
+source(covid_get_path('POMP/inference/statewide/inference_statewide.R'))
 
 initFile = covid_get_path('POMP/model_scripts/statewide/initializer_compartment_distribute_IH4.c')
 rprocFile = covid_get_path('POMP/model_scripts/statewide/rprocess_interventionbeta_IH4.c')
 nu_scales_file = covid_get_path('POMP/data/nu_scaling.csv')
-fraction_underreported_file = covid_get_path('POMP/inference/April_21/time_varying_underreporting/frac_underreported.csv')
+fraction_underreported_file = covid_get_path('POMP/inference/April_28/frac_underreported.csv')
 default_par_file = './default_parameter_values.csv'
 contact_filename = covid_get_path('POMP/data/formatted_contacts_IL.RData')
 deltaT = 0.1
@@ -70,6 +70,8 @@ scalework=as.numeric(args[15])
 scaleschool=as.numeric(args[16])
 scalehome=as.numeric(args[17])
 scaleother=as.numeric(args[18])
+
+min_data_time_ICU = as.numeric(args[19])
 
 print('Reading in files')
 # CSnippets
@@ -106,21 +108,27 @@ n_age_groups = nrow(population1)
 
 
 # Load real data, assume read in from civis
-data_1 = get_civis_data(data_filename_1)  %>% mutate(ObsDeaths_1=ObsDeaths) %>% select(time, ObsDeaths_1)
-data_2 = get_civis_data(data_filename_2)  %>% mutate(ObsDeaths_2=ObsDeaths) %>% select(time, ObsDeaths_2)
-data_3 = get_civis_data(data_filename_3)  %>% mutate(ObsDeaths_3=ObsDeaths) %>% select(time, ObsDeaths_3)
+data_1 = get_civis_data(data_filename_1)  %>% mutate(ObsDeaths_1=ObsDeaths, ObsICU_1=ObsICU) %>% select(time, ObsDeaths_1, ObsICU_1)
+data_2 = get_civis_data(data_filename_2)  %>% mutate(ObsDeaths_2=ObsDeaths, ObsICU_2=ObsICU) %>% select(time, ObsDeaths_2, ObsICU_2)
+data_3 = get_civis_data(data_filename_3)  %>% mutate(ObsDeaths_3=ObsDeaths, ObsICU_3=ObsICU) %>% select(time, ObsDeaths_3, ObsICU_3)
 
 
 data = merge(data_1, data_2, by='time')
 data = merge(data, data_3, by='time')
 
 # Add NAs if necessary
+
+
 data <- data %>% filter(time>=simstart, time<=simend) %>% 
                  mutate(
                         ObsDeaths_1=ifelse(time<min_data_time, NA, ObsDeaths_1),
                         ObsDeaths_2=ifelse(time<min_data_time, NA, ObsDeaths_2),
-                        ObsDeaths_3=ifelse(time<min_data_time, NA, ObsDeaths_3)) %>%
-                select(ObsDeaths_1, ObsDeaths_2, ObsDeaths_3, time)
+                        ObsDeaths_3=ifelse(time<min_data_time, NA, ObsDeaths_3),
+
+                        ObsICU_1=ifelse(time<min_data_time_ICU, NA, ObsICU_1),
+                        ObsICU_2=ifelse(time<min_data_time_ICU, NA, ObsICU_2),
+                        ObsICU_3=ifelse(time<min_data_time_ICU, NA, ObsICU_3)) %>%
+                select(ObsDeaths_1, ObsDeaths_2, ObsDeaths_3, ObsICU_1, ObsICU_2, ObsICU_3, time)
 
 print(data)
 
@@ -142,21 +150,33 @@ pars$scalehome=scalehome
 
 
 ## Set parameters to search over
-select <- dplyr::select
-rename <- dplyr::rename
-summarize <- dplyr::summarise
-contains <- dplyr::contains
-
 jobid = jobid_master
 
 # Read in points
-points = read.csv('consolidated.pfilter.csv')
-design = points %>% arrange(desc(loglik))
+lower_pars = c(beta1=0.01, 
+  beta2_1=0.003, 
+  beta2_2=0.003, 
+  beta2_3=0.003, 
+  num_init_1=100,
+  num_init_2=100,
+  num_init_3=1000)
+
+upper_pars = c(beta1=0.03, 
+  beta2_1=0.015, 
+  beta2_2=0.015, 
+  beta2_3=0.015, 
+  num_init_1=500,
+  num_init_2=500,
+  num_init_3=8000)
+
+design = sobolDesign(lower=lower_pars, 
+  upper=upper_pars, 
+  316)
 
 pars$beta1 = design[jobid, 'beta1']
 pars$beta2_1 = design[jobid, 'beta2_1']
-pars$beta2_2 = design[jobid, 'beta2_1']
-pars$beta2_3 = design[jobid, 'beta2_1']
+pars$beta2_2 = design[jobid, 'beta2_2']
+pars$beta2_3 = design[jobid, 'beta2_3']
 pars$num_init_1 = round(design[jobid, 'num_init_1'])
 pars$num_init_2 = round(design[jobid, 'num_init_2'])
 pars$num_init_3 = round(design[jobid, 'num_init_3'])
@@ -169,6 +189,7 @@ transformation=parameter_trans(log=c('beta1',
   'num_init_1',
   'num_init_2',
   'num_init_3'))
+
 ## Make a pomp object for inference
 print('Making pomp object')
 pomp_object <- make_pomp_object_covid(
@@ -186,16 +207,13 @@ pomp_object <- make_pomp_object_covid(
     data=data,
     fitstart=simstart,
     time_column='time',
-    obsnames=c('ObsDeaths_1', 'ObsDeaths_2', 'ObsDeaths_3'),
+    obsnames=c('ObsDeaths_1', 'ObsDeaths_2', 'ObsDeaths_3', 'ObsICU_1', 'ObsICU_2', 'ObsICU_3'),
     transformations=transformation,
     inherit_parameters=FALSE
     )
 
 
 print('pomp object created, running pfilter')
-
-t = Sys.time()
-
 ## Run inference and return dataframes for output
 run_mif_and_output_result(n_reps_pfilter, 
   n_particles_pfilter, 
@@ -211,5 +229,3 @@ run_mif_and_output_result(n_reps_pfilter,
   rw_vec,
   cooling_rate,
   n_particles_mif)
-
-print(Sys.time() - t)
