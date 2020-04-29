@@ -348,12 +348,12 @@ simulate_pomp_covid__init_covariate_table <- function(input_params, intervention
 
 get_civis_data <- function(civis_filename){
   data = read.csv(civis_filename)
-  data = data %>% select(date, new_deaths) %>% filter(!is.na(new_deaths))
-  names(data) = c('date','ObsDeaths')
+  data = data %>% select(date, new_deaths, confirmed_covid_icu) %>% filter(!is.na(new_deaths))
+  names(data) = c('date','ObsDeaths', 'ObsICU')
   data$ObsDeaths = round(data$ObsDeaths)
   data$ObsCases = NA
   data$time = as.numeric(as.Date(data$date) - as.Date('2020-01-14'))
-  data = rbind(c(NA, NA, NA, min(data$time)-1), data)
+  data = rbind(c(NA, NA, NA, NA, min(data$time)-1), data)
   data
 }
 
@@ -383,7 +383,9 @@ run_pfilter_and_output_result <- function(n_reps_pfilter,
                       t0=simstart,
                       data_start=min_data_time,
                       intervention_start=intervention_start,
-                      runtime=runtime))
+                      runtime=runtime,                      
+                      nparticles=n_particles_pfilter,
+                      n_reps=n_reps_pfilter))
 
   write.table(output, file = output_filename, sep = ",",col.names = TRUE, row.names=FALSE, append=TRUE)
 }
