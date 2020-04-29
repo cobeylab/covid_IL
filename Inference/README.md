@@ -14,6 +14,7 @@ Briefly, through repeated rounds of simulating the dynamics and then perturbing 
 * `rprocess_interventionbeta_IH4.c`: Process model that describes how people move through compartments at each timestep.
 * `initializer_compartment_distribute_IH4.c`: Initializer that places people into infectious classes at the beginning of the simulation.
 * `dmeasure_deaths_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths. Observed deaths at each timestep are a sample of those who have died in the hospital. We assume that we do not observe all COVID-19 deaths because testing does not detect all infections.
+* `dmeasure_deaths_ICU_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths and confirmed ICU cases. Observed deaths at each timestep are a sample of those who have died in the hospital. Observed ICU cases are a sample of all people in ICU model compartments. We assume that we do not observe all COVID-19 deaths and ICU cases because testing does not detect all infections.
 
 ## Run script descriptions
 * `inference_functions.R`: Essential functions for creating and using `pomp` objects. 
