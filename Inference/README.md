@@ -17,6 +17,7 @@ Briefly, through repeated rounds of simulating the dynamics and then perturbing 
 
 ## Run script descriptions
 * `inference_functions.R`: Essential functions for creating and using `pomp` objects. 
-* `1_pfilter_search.R`: Evaluates likelihood on a sample of points with pfilter.
-* `2_mif_single.R`: Runs `mif` searches starting at the 200 best points from the initial `pfilter` search.
-* `3_pfilter_mif_results.R`: Evaluates likelihood on output of `mif` searches.
+* `1_mif_single.R`: Runs `mif` search from Latin hypercube sample of points.
+* `2_get_best_points_from_mif.R`: Gets best points across all `mif` chains.
+* `3_pfilter_best_points.R`: Evaluates likelihood on best `mif` points with `pfilter`.
+* `4_pfilter_search.R`: Performs a pfilter search on a Latin hypercube sample of points that surround the MLE.
