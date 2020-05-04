@@ -48,19 +48,15 @@ The forecasts incorporate several types of uncertainty that contribute to variat
 * Uncertainty in the fraction of COVID-19 deaths in hospitals that were missed in March due to inadequate testing
 * Uncertainty in the fraction of the population infected on March 1
 * Uncertainty in the inferred transmission rates
+
 Incorporating all of these types of uncertainty produces a range of potential epidemic trajectories.
 
 ### Public health interventions 
 The model can be adapted to investigate different types of interventions.
 We currently model shelter-in-place as a reduction in the overall transmission rate, which is shared by all infected individuals, and reductions in age- and location-specific contact rates.
-The three scenarios we explore are:
-
-1. Shelter in place extended indefinitely ("indefinite"). The reduction in the overall transmission rate is inferred (estimated). We assume a 100% reduction in at-school contacts, a 40% reduction in at-work contacts, and a 50% reduction in contacts outside of the home.
-2. Shelter in place is lifted on May 1, 2020 ("lifted")
-3. Shelter in place is never adopted, and individuals do not change their behavior from early March ("never")
+We model specific hypothetical scenarios to reflect the relaxing of shelter-in-place interventions, which we describe in the [Forecasting](./Forecasting) directory.
 
 ### Caveats
-
 The model's predictions will shift as new data on COVID-19 emerges from Illinois and around the world.
 We will update the model to incorporate better assumptions about the underlying biology and epidemiology.
 We will also continue to try different modeling approaches with different assumptions to see how they affect conclusions.
