@@ -9,9 +9,9 @@ We then inferred a separate post-intervention transmission rate.
 For the baseline model scenario, we maintain the inferred value of the post-intervention transmission rate indefinitely. We assume that this is the maximum reduction in transmission. 
 To model the relaxing of shelter-in-place interventions, we project three additional scenarios.
 
-	1) On May 7, the post-intervention transmission rate increases by 20%. At our current parameter estimates, this corresopnds to a 72% reduction in pre-intervention transmission rate.
-  2) On May 7, the post-intervention transmission rate increases by 40%. At our current parameter estimates, this corresopnds to a 67% reduction in pre-intervention transmission.
-	3) On May 7, the post-intervention transmission rate increases by 40%. At our current estimates, this corresopnds to a 62% reduction in pre-intervention transmission.
+	* On May 7, the post-intervention transmission rate increases by 20%. At our current parameter estimates, this corresopnds to a 72% reduction in pre-intervention transmission rate.
+  * On May 7, the post-intervention transmission rate increases by 40%. At our current parameter estimates, this corresopnds to a 67% reduction in pre-intervention transmission.
+	* On May 7, the post-intervention transmission rate increases by 40%. At our current estimates, this corresopnds to a 62% reduction in pre-intervention transmission.
 
 Figure 1 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through June 6, 2020 under the four model scenarios. 
 
