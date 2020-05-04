@@ -17,7 +17,7 @@ Figure 1 gives the projected incident infections, population prevalence, non-ICU
 
 Figure 2 gives the projected reported hosptialized and non-hospitalized deaths through June 6, 2020 under the four model scenarios. 
 
-![Figure 2](./plots/death_summary_ouptuts.png)
+![Figure 2](./plots/death_summary_ouptuts.png){ width=50% }
 
 
 ## File descriptions
