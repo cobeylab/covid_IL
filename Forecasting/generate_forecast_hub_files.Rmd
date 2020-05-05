@@ -1,0 +1,247 @@
+# Simulate some data
+
+```{r}
+require(dplyr)
+require(pomp)
+require(ggplot2)
+require(magrittr)
+require(lubridate)
+require(MASS)
+require(reshape2)
+require(dplyr)
+require(foreach)
+require(tidyverse)
+require(MMWRweek)
+
+select <- dplyr::select
+rename <- dplyr::rename
+summarize <- dplyr::summarise
+contains <- dplyr::contains
+
+root <- '../../../'
+source(file.path(root, '_covid_root.R'))
+covid_set_root(root)
+
+source(covid_get_path('POMP/inference/statewide/inference_statewide.R'))
+
+points = read.csv('consolidated.all.sample_from_surface.revised2.csv')
+
+second_intervention_start_date='2020-05-15'
+
+# Make last day a Saturday for ease....
+simulation_end = '2020-06-06'
+
+
+initFile = covid_get_path('POMP/model_scripts/statewide/initializer_compartment_distribute_IH4.c')
+rprocFile = covid_get_path('POMP/model_scripts/statewide/rprocess_interventionbeta_IH4.c')
+nu_scales_file = covid_get_path('POMP/data/nu_scaling.csv')
+fraction_underreported_file = covid_get_path('POMP/data/frac_underreported.csv')
+default_par_file = './default_parameter_values.csv'
+contact_filename = covid_get_path('POMP/data/formatted_contacts_IL.RData')
+dmeasFile = 'POMP/model_scripts/statewide/dmeasure_deaths_aggregate.c'
+population_filename_1 = 'POMP/data/IL_EMS_regions_1-2.imperial_bins.csv'
+population_filename_2 = 'POMP/data/IL_EMS_regions_3-6.imperial_bins.csv'
+population_filename_3 = 'POMP/data/IL_EMS_regions_7-11.imperial_bins.csv'
+
+deltaT = 0.1
+jobid_master = 1
+simstart = 47
+simend = as.numeric(as.Date(simulation_end) - as.Date('2020-01-14'))
+
+min_data_time = 61
+intervention_start=62
+intervention_end = simend + 100
+
+scalework=0.6
+scaleschool=0
+scalehome=1
+scaleother=0.5
+print('Reading in files')
+# CSnippets
+dmeasFile = covid_get_path(dmeasFile)
+dmeasure_snippet <- read_Csnippet(dmeasFile)
+rprocess_snippet <- read_Csnippet(rprocFile)
+rinit_snippet <- read_Csnippet(initFile)
+
+# import scaling for nu
+nu_scales = read.csv(nu_scales_file)
+row.names(nu_scales) = nu_scales$time
+
+# Set beta scales to be the same as nu scales, i.e., 1 all over
+beta_scales = nu_scales
+names(beta_scales) = c('time','scale_beta')
+
+# import fraction underreported covariate
+fraction_underreported = read.csv(fraction_underreported_file)
+row.names(fraction_underreported) = fraction_underreported$time
+
+# Import contact matrix data
+load(contact_filename)
+
+# Make population a vector that has the regions concatenated together
+population1 = read.csv(covid_get_path(population_filename_1))
+colnames(population1) <- c("AGE_GROUP_MIN", "POPULATION")
+
+population2 = read.csv(covid_get_path(population_filename_2))
+colnames(population2) <- c("AGE_GROUP_MIN", "POPULATION")
+
+population3 = read.csv(covid_get_path(population_filename_3))
+colnames(population3) <- c("AGE_GROUP_MIN", "POPULATION")
+
+population_list=list(population1, population2, population3)
+
+n_age_groups = nrow(population1)
+
+
+print('Initializing parameters')
+### User-specification of parameters and interventions for model 
+par_frame = read.csv(default_par_file)
+pars = as.numeric(par_frame$value)
+names(pars) = par_frame$param_name
+pars = as.list(pars)
+
+## Set intervention start
+pars$t_start = intervention_start
+pars$t_end = intervention_end
+
+## Set intervention strength
+pars$scalework =scalework
+pars$scaleschool=scaleschool
+pars$scaleother=scaleother
+pars$scalehome=scalehome
+
+# Read in points
+design = points %>% arrange(desc(loglik))
+
+names(fraction_underreported) = c('Time', 'frac_underreported')
+fraction_underreported = fraction_underreported %>% 
+    filter(Time %in% seq(simstart, simend))
+row.names(fraction_underreported) = fraction_underreported$Time
+
+get_obsprob = function(Time){
+    pars$nu_3 * pars$theta_test * (1 - fraction_underreported[as.character(Time), 'frac_underreported'] * runif(length(Time), 0.8, 1))
+}
+
+# Wrap in another for loop that resets beta_scales
+
+scales = c(1.0, 1.2, 1.4, 1.6)
+
+for(scale in scales){
+    start = as.numeric(as.Date(second_intervention_start_date) - as.Date('2020-01-14'))
+    temp_scales = beta_scales %>% mutate(scale_beta= case_when((time >= start) ~ scale,
+                                            (time < start) ~ 1))
+
+    
+    # For model labels
+    if (scale == 1.0){
+        scenario = 100
+    } else{
+        scenario = (1 - (scale-1)) * 100
+    }
+    
+    foreach(jobid=1:nrow(design), .combine='rbind') %do% {
+        pars$beta1 = design[jobid, 'beta1']
+        pars$beta2_1 = design[jobid, 'beta2_1']
+        pars$beta2_2 = design[jobid, 'beta2_2']
+        pars$beta2_3 = design[jobid, 'beta2_3']
+        pars$num_init_1 = round(design[jobid, 'num_init_1'])
+        pars$num_init_2 = round(design[jobid, 'num_init_2'])
+        pars$num_init_3 = round(design[jobid, 'num_init_3'])
+        
+        ## Make a pomp object for inference
+        print('Making pomp object')
+        pars$tmin=simstart
+        pars$tmax=simend
+        simout <- simulate_pomp_covid(
+            n_regions = pars$n_regions,
+            n_age_groups = n_age_groups,
+            nsim=design[jobid, 'num_sims'],
+            input_params = pars,
+            delta_t = deltaT,
+            contacts=pomp_contacts,
+            population=population_list,
+            nu_scales=nu_scales,
+            beta_scales=temp_scales,
+            frac_underreported=fraction_underreported,
+            rprocess_Csnippet = rprocess_snippet,
+            rinit_Csnippet = rinit_snippet
+            ) %>% process_pomp_covid_output(agg_regions=T)
+
+        sims <- simout$plotting_output
+
+        # Calculate non-hospitalized deaths
+        nh <- add_non_hospitalized_deaths(simout, pars) %>% filter(Time <= max(sims$Time))
+        nh$Parset=jobid
+        nh = get_reported_non_hospitalized_deaths(nh) %>%
+            mutate(Cases=Cases_reported) %>%
+            ungroup() %>%
+            select(SimID, Time, Compartment, Cases)
+        
+        cumulative_nh = nh %>%
+            group_by(SimID) %>%
+            arrange(Time) %>%
+            mutate(Compartment='DnH',
+                   Cases=cumsum(Cases)) %>%
+                ungroup()
+
+        # Impose observation model on hospitalized deaths
+        hd = sims %>% filter(Compartment == 'nD') %>%
+            mutate(Cases = rbetabinom(1, Cases, get_obsprob(Time), pars$dispersion))
+            
+        cumulative_hd = hd %>%
+            group_by(SimID) %>%
+            arrange(Time) %>%
+        mutate(Compartment='D',
+               Cases=cumsum(Cases)) %>%
+            ungroup()
+        
+        
+        # Add to output
+        sims <- bind_rows(hd, cumulative_hd, nh, cumulative_nh)
+        
+
+        # Combine D + DnH and nD + nDnH
+        new_deaths <- sims %>% 
+            filter(Compartment %in% c('nD', 'nDnH')) %>%
+            group_by(SimID, Time) %>%
+            summarize(Cases=sum(Cases)) %>%
+            mutate(Compartment='nD')
+
+        tot_deaths <- sims %>% 
+            filter(Compartment %in% c('D', 'DnH')) %>%
+            group_by(SimID, Time) %>%
+            summarize(Cases=sum(Cases)) %>%
+            mutate(Compartment='D')
+        
+        sims <- sims %>%
+            filter(!Compartment %in% c('nD','nDnH','D','DnH'))
+        
+        sims <- bind_rows(sims, new_deaths, tot_deaths)
+        
+        sims$parset = jobid
+        
+        as.data.frame(sims)
+    } -> final
+    
+    # Sum IC and IH for hospitalization
+    #hosp <- final %>% filter(Compartment %in% c('IC', 'IH')) %>% 
+    #    group_by(Time, SimID, parset) %>% 
+    #    summarize(Cases=sum(Cases)) %>% 
+    #    mutate(Compartment='H') %>% 
+    #    ungroup() %>% 
+    #    select(SimID, Time, Compartment, Cases, parset)
+    
+    #final <- bind_rows(final, hosp)
+    
+    #saveRDS(final, 'final.rds')
+    
+    format_for_covid_hub(final) -> projection_daily
+    format_for_covid_hub_week(final) -> projection_weekly
+    
+    bind_rows(projection_daily, projection_weekly) -> final_projection
+    
+    write.csv(final_projection, sprintf("%s-cobeylab-ILCovid_%s_3.csv", Sys.Date(), scenario))
+}
+
+```
+
