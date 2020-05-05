@@ -16,7 +16,7 @@ Figure 1 gives the projected incident infections, population prevalence, non-ICU
 ![Figure 1](./plots/summary_outputs.png)
 
 
-Figure 2 gives the projected reported hosptialized and non-hospitalized deaths through June 13, 2020 under the four model scenarios. 
+Figure 2 gives the projected daily reported hosptialized and non-hospitalized deaths through June 13, 2020, and reported daily deaths from the Illinois Department of Public Health (IDPH) under the four model scenarios. 
 
 ![Figure 2](./plots/death_summary_outputs.png) 
 
