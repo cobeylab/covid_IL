@@ -25,17 +25,19 @@ for (int region=0; region<n_regions; region++){
         }
 
         // Adjust for underreporting
-        int true_ObsDeaths;
-        if (t < t_reporting_adjustment){
-            double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 1);
-            true_ObsDeaths  = ObsDeaths[region] / (1-(frac_underreported*frac_hospitalized_deaths)); 
-        } else{
-            true_ObsDeaths = ObsDeaths[region];
-        }
+        //int true_ObsDeaths;
+        //if (t < t_reporting_adjustment){
+        //    double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 1);
+        //    true_ObsDeaths  = ObsDeaths[region] / (1-(frac_underreported*frac_hospitalized_deaths)); 
+        //} else{
+        //    true_ObsDeaths = ObsDeaths[region];
+        //}
+        double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 1);
+        double underreporting =  (1-(frac_underreported*frac_hospitalized_deaths)); 
 
         // Calculate likelihood
-        if (true_ObsDeaths <= agg_new_D){
-            region_lik_deaths = dbetabinom(true_ObsDeaths, agg_new_D, nu_3 * theta_test, dispersion, give_log); 
+        if (ObsDeaths[region] <= agg_new_D){
+            region_lik_deaths = dbetabinom(ObsDeaths[region], agg_new_D, nu_3 * theta_test * underreporting, dispersion, give_log); 
         } else{
             region_lik_deaths = (give_log) ? -1e10 : 0; 
         }
