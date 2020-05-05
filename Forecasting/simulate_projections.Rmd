@@ -1,11 +1,10 @@
 ---
 title: "Simulate from maximum likelihood parameter estimates"
+author: Sylvia Ranjeva
+date: May 1, 2020
 output: html_document
 ---
-This code produces simulated projections of IL coronavirus dynamcis from the best-fit model parameters.  We simulate the dynamics under three different intervention scenarios:
-1. Shelter in place beginning on March 16, 2020 and continuing indefinitely
-2. Shelter in place beginning on March 16, and lifted on a determined date (here, May 1, 2020)
-3. Shelter in place never enacted.
+Code to simulate interventions based on scaling of the post-intervention transmission rate beginning on a specified date at increases of 20, 40, and 60%. 
 
 ```{r}
 require(dplyr)
@@ -25,12 +24,17 @@ rename <- dplyr::rename
 summarize <- dplyr::summarise
 contains <- dplyr::contains
 
-input_points_file = "../Inference/inference_outputs/model_params.csv"
+root <- '../../../'
+source(file.path(root, '_covid_root.R'))
+
+covid_set_root(root)
+
+input_points_file =  #parameters file from the inference outputs folder 
 source("input_file_specification.R")
 
 # Projection specifications: all projections
 reference_date <- as.Date("2020-01-14") # All numeric times in reference to this date 
-end_projection_date <- as.Date("2020-07-31")
+end_projection_date <- as.Date("2020-09-29")
 start_projection_date <- as.Date("2020-03-01")
 deltaT = 0.1 # timestep for projections 
 
@@ -42,47 +46,49 @@ scalehome = 1
 scaleother = 0.5
 frac_non_hosp = 0.21 # Fraction of deaths that occur outside of the hospital
 time_lag_non_hosp_deaths = 10 # days from infection to non-hospitalized deaths
+intervention_start_date <- as.Date("2020-03-16") 
+intervention_end_date <- end_projection_date # For all scenarios, simulate assuming interventions in place indefinitely
+scale_beta_start_date <- as.Date("2020-05-15")
+regional_aggregation = T # do statewide estimates
 
-## Scenario 1: simulate assuming interventions in place indefinitely 
-intervention_start_date <- as.Date("2020-03-16")
-intervention_end_date <- end_projection_date
-output_filename = "./sim_projections/projections_indefinite"
-
+## Scenario 1: no scaling on post-intervention beta
+output_filename = "./sim_projections/projections_no_scaling"
+beta_scaling = 1.0
 t_start <- Sys.time()
-source("inference_to_simulation.R")
+source("inference_to_simulation_statewide.R")
 t_end <- Sys.time()
 print(t_end - t_start)
 
-## Scenario 2: simulate assuming that interventions were lifted 
-intervention_start_date <- as.Date("2020-05-01")
-intervention_end_date <- end_projection_date
-output_filename = "./sim_projections/projections_lifted"
-
+## Scenario 2: scale up 20% 
+output_filename = "./sim_projections/projections_scale_20"
+beta_scaling = 1.2
 t_start <- Sys.time()
-source("inference_to_simulation.R")
+source("inference_to_simulation_statewide.R")
 t_end <- Sys.time()
 print(t_end - t_start)
 
-## Scenario 3: simulate assuming that interventions had never occurred
-intervention_start_date <- as.Date(end_projection_date + 1) # set a time after the end of simulations
-intervention_end_date <- as.Date(end_projection_date + 2)
-output_filename = "./sim_projections/projections_never"
-
+## Scenario 2: scale up 40% 
+output_filename = "./sim_projections/projections_scale_40"
+beta_scaling = 1.4
 t_start <- Sys.time()
-source("inference_to_simulation.R")
+source("inference_to_simulation_statewide.R")
+t_end <- Sys.time()
+print(t_end - t_start)
+
+## Scenario 2: scale up 60% 
+output_filename = "./sim_projections/projections_scale_60"
+beta_scaling = 1.6
+t_start <- Sys.time()
+source("inference_to_simulation_statewide.R")
 t_end <- Sys.time()
 print(t_end - t_start)
 
 
-## Plot results ## ----------------------
-file_path = "./sim_projections/"
+## Plot results 
+file_path = "./sim_projections_5/"
 plot_filename <- "outputs.png"
-intervention_scenarios <- c("indefinite", "lifted", "never")
-
-plot_filename <- "outputs.png"
-intervention_scenarios <- c("indefinite", "lifted", "never")
-this_date <- "April 22, 2020"
-
+intervention_scenarios <- c("no_scaling", "20", "40", "60")
+this_date <- "April 30, 2020"
 source("plot_intervention_comparisons.R")
 
 ```
