@@ -48,7 +48,7 @@ const double *kappa = &kappa_1;
 
 // For initializing new cases;
 double *new_mild_infections = &new_mild_infections_1_1;
-double *new_severe_infections = &new_severe_infections_1_1;
+double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
 double *new_IH1 = &new_IH1_1_1;
 double *new_IC2 = &new_IC2_1_1;
@@ -183,7 +183,7 @@ for (int region=0; region<n_regions; region += 1 ){
       R[i + region * num_age_groups] = 0;
       D[i + region * num_age_groups] = 0;
       new_mild_infections[i + region * num_age_groups] = new_mild;
-      new_severe_infections[i + region * num_age_groups] = new_IS;
+      new_symptomatic_infections[i + region * num_age_groups] = new_IS + new_mild;
       new_deaths[i + region * num_age_groups] = 0;
       new_IH1[i + region * num_age_groups] = 0;
       new_IC2[i + region * num_age_groups] = 0;
