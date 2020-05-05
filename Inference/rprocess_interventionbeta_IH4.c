@@ -20,6 +20,9 @@ int alpha_IC2_int = alpha_IC2;
 int alpha_IC3_int = alpha_IC3;
 
 
+// add noise to beta for simulations
+const int beta_noise = add_noise_to_beta;
+const double amp_noise = beta_noise_amplitude;
 
 // initialize parameter pointers
 const double *rho = &rho_1;
@@ -58,7 +61,7 @@ const double *scale_other_intervention = &scale_other_intervention_1;
 const double *N = &N_1_1;
 //const double *beta2 = &beta2_1;
 double *new_mild_infections = &new_mild_infections_1_1;
-double *new_severe_infections = &new_severe_infections_1_1;
+double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
 double *new_IH1 = &new_IH1_1_1;
 double *new_IC2 = &new_IC2_1_1;
@@ -125,7 +128,17 @@ for (int region=0; region<n_regions; region +=1)
             betaT = beta1;
           }
       }
-
+    
+      betaT = betaT*scale_beta;
+      
+      // add noise to beta when evaluating increases in post-intervention transmission rate
+      if(beta_noise == 1){
+          betaT = rnorm(betaT, amp_noise*betaT);
+          if(betaT < beta2){
+            betaT = beta2;
+          }
+      }
+        
         double presymptomatic = 0; // This will be calculated by looping over all alpha_P subcompartments of P
         int PStart = i * alpha_P_int + region * alpha_P_int * num_age_groups;
         for (int x=0; x<alpha_P_int; x++){
@@ -319,13 +332,12 @@ for (int region=0; region<n_regions; region +=1)
       D[j + (region * num_age_groups)] += dIC3[alpha_IC3_int-1] + dIH4[alpha_IH4_int-1];
 
       new_mild_infections[j + (region * num_age_groups)] += dP_m;
-      new_severe_infections[j + (region * num_age_groups)] += S_to_recover + S_to_ICU_recover;
+      new_symptomatic_infections[j + (region * num_age_groups)] += dP_s + dP_m;
       new_deaths[j + (region * num_age_groups)] += dIC3[alpha_IC3_int - 1] + dIH4[alpha_IH4_int - 1];
       Inc[j + (region * num_age_groups)] += dE[alpha_E_int - 1];
       new_IH1[j + (region * num_age_groups)] += S_to_recover;
       new_IC2[j + (region * num_age_groups)] += dIH2[alpha_IH2_int - 1];
       new_IC3[j + (region * num_age_groups)] += dIH3[alpha_IH3_int - 1];
       new_IH4[j + (region * num_age_groups)] += S_to_hosp_death;
-
     }
 }
