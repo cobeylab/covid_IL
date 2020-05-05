@@ -5,20 +5,7 @@ We implement public health interventions both by scaling contact rates and by sc
 We assume that a stay-at-home order scales down non-home contacts (work contacts, school contacts, and other contacts). 
 On March 16, we scaled down school contacts to 0, work contacts to 0.6 times their normal value, and other contacts to 0.5 times their normal value. 
 We then inferred a separate post-intervention transmission rate.
-For the baseline model scenario, we maintain the inferred value of the post-intervention transmission rate indefinitely. We assume that this is the maximum reduction in transmission. 
-To model the relaxing of shelter-in-place interventions, we project three additional scenarios.
-1. On May 7, the post-intervention transmission rate increases by 20%. At our current parameter estimates, this corresopnds to a 72% reduction in pre-intervention transmission rate.
-2. On May 7, the post-intervention transmission rate increases by 40%. At our current parameter estimates, this corresopnds to a 67% reduction in pre-intervention transmission.
-3. On May 7, the post-intervention transmission rate increases by 60%. At our current estimates, this corresopnds to a 62% reduction in pre-intervention transmission.
-
-Figure 1 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through June 6, 2020 under the four model scenarios. 
-
-![Figure 1](./plots/summary_outputs.png)
-
-Figure 2 gives the projected reported hosptialized and non-hospitalized deaths through June 6, 2020 under the four model scenarios. 
-
-![Figure 2](./plots/death_summary_ouptuts.png) 
-
+For the baseline model scenario, we maintain the inferred value of the post-intervention transmission rate indefinitely. We assume that this is the maximum reduction in transmission. To model the relaxing of shelter-in-place interventions, we project three additional scenarios with a scaled increase to the post-intervention transmission rate by 20%, 40% or 60%.
 
 ## File descriptions
 
