@@ -224,7 +224,8 @@ simulate_pomp_covid__init_parameters <- function(
       "dispersion" = dispersion,
       "frac_severe_init" = frac_severe_init,
       "t_reporting_adjustment" = t_reporting_adjustment,
-      "lower_bound_reporting_uncertainty" = lower_bound_reporting_uncertainty
+      "lower_bound_reporting_uncertainty" = lower_bound_reporting_uncertainty,
+      "beta_noise_amplitude" = beta_noise_amplitude
     )
     
     for(i in c(1:length(population_list))){
@@ -362,6 +363,8 @@ simulate_pomp_covid__init_covariate_table <- function(input_params, intervention
   covar_table_interventions$nu_scale = nu_scales[covar_table_interventions$time, 'nu_scale']
   
   covar_table_interventions$scale_beta = beta_scales[covar_table_interventions$time, 'scale_beta']
+  
+  covar_table_interventions$add_noise_to_beta = beta_scales[covar_table_interventions$time, 'add_noise_to_beta']
   
   covar_table_interventions$frac_underreported = frac_underreported[covar_table_interventions$time, 'frac_underreported']
 
@@ -614,4 +617,28 @@ get_reported_non_hospitalized_deaths = function(df_input,
     mutate(Cases_reported = round(runif(1,lower_bound_reporting,upper_bound_reporting)*Cases)) %>% 
     ungroup()
   return(df_nHD)
+}
+
+get_scale = function(t_logistic_start,
+                     intervention_lift,
+                     simstart,
+                     simend,
+                     max_scale){
+    
+    times = seq(1, simend, 1)
+    
+    logistic = function(x, mscale=max_scale, shift=intervention_lift){
+        mean = (mscale-1)/(1+exp(-(x - shift))) + 1
+        mean
+    }
+
+    raw_scales = data.frame(time=times, scale_beta=logistic(times)) %>%
+        mutate(scale_beta = case_when((time < t_logistic_start) ~1,
+                                 (time>=t_logistic_start) ~scale_beta),
+               add_noise_to_beta = case_when((time < t_logistic_start) ~ 0,
+                                             (time >= t_logistic_start) ~ 1))
+    
+    row.names(raw_scales) = raw_scales$time
+    raw_scales
+    
 }
