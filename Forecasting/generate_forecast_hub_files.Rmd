@@ -1,52 +1,50 @@
 # Simulate some data
 
 ```{r}
-require(dplyr)
 require(pomp)
 require(ggplot2)
-require(magrittr)
-require(lubridate)
-require(MASS)
-require(reshape2)
 require(dplyr)
 require(foreach)
 require(tidyverse)
 require(MMWRweek)
+require(rmutil)
 
 select <- dplyr::select
 rename <- dplyr::rename
 summarize <- dplyr::summarise
 contains <- dplyr::contains
 
-root <- '../../../'
+root <- '../'
 source(file.path(root, '_covid_root.R'))
 covid_set_root(root)
 
-source(covid_get_path('POMP/inference/statewide/inference_statewide.R'))
+source(covid_get_path('Inference/inference_functions.R'))
 
 points = read.csv('consolidated.all.sample_from_surface.revised2.csv')
 
-second_intervention_start_date='2020-05-15'
+intervention_lift_date=as.Date('2020-05-15')
+reference_date = as.Date('2020-01-14')
+today = Sys.Date()
+
 
 # Make last day a Saturday for ease....
-simulation_end = '2020-06-06'
+simulation_end = as.Date('2020-06-13')
 
 
-initFile = covid_get_path('POMP/model_scripts/statewide/initializer_compartment_distribute_IH4.c')
-rprocFile = covid_get_path('POMP/model_scripts/statewide/rprocess_interventionbeta_IH4.c')
-nu_scales_file = covid_get_path('POMP/data/nu_scaling.csv')
-fraction_underreported_file = covid_get_path('POMP/data/frac_underreported.csv')
-default_par_file = './default_parameter_values.csv'
-contact_filename = covid_get_path('POMP/data/formatted_contacts_IL.RData')
-dmeasFile = 'POMP/model_scripts/statewide/dmeasure_deaths_aggregate.c'
-population_filename_1 = 'POMP/data/IL_EMS_regions_1-2.imperial_bins.csv'
-population_filename_2 = 'POMP/data/IL_EMS_regions_3-6.imperial_bins.csv'
-population_filename_3 = 'POMP/data/IL_EMS_regions_7-11.imperial_bins.csv'
+initFile = covid_get_path('Inference/initializer_compartment_distribute_IH4.c')
+rprocFile = covid_get_path('Inference/rprocess_interventionbeta_IH4_noise.c')
+nu_scales_file = covid_get_path('Data/nu_scaling.csv')
+fraction_underreported_file = covid_get_path('Data/frac_underreported.csv')
+default_par_file = covid_get_path('Parameters/default_parameter_values.csv')
+contact_filename = covid_get_path('Data/formatted_contacts_IL.RData')
+population_filename_1 = 'Data/IL_EMS_regions_1-2.imperial_bins.csv'
+population_filename_2 = 'Data/IL_EMS_regions_3-6.imperial_bins.csv'
+population_filename_3 = 'Data/IL_EMS_regions_7-11.imperial_bins.csv'
 
 deltaT = 0.1
 jobid_master = 1
 simstart = 47
-simend = as.numeric(as.Date(simulation_end) - as.Date('2020-01-14'))
+simend = as.numeric(simulation_end - reference_date)
 
 min_data_time = 61
 intervention_start=62
@@ -58,18 +56,12 @@ scalehome=1
 scaleother=0.5
 print('Reading in files')
 # CSnippets
-dmeasFile = covid_get_path(dmeasFile)
-dmeasure_snippet <- read_Csnippet(dmeasFile)
 rprocess_snippet <- read_Csnippet(rprocFile)
 rinit_snippet <- read_Csnippet(initFile)
 
 # import scaling for nu
 nu_scales = read.csv(nu_scales_file)
 row.names(nu_scales) = nu_scales$time
-
-# Set beta scales to be the same as nu scales, i.e., 1 all over
-beta_scales = nu_scales
-names(beta_scales) = c('time','scale_beta')
 
 # import fraction underreported covariate
 fraction_underreported = read.csv(fraction_underreported_file)
@@ -127,11 +119,7 @@ get_obsprob = function(Time){
 scales = c(1.0, 1.2, 1.4, 1.6)
 
 for(scale in scales){
-    start = as.numeric(as.Date(second_intervention_start_date) - as.Date('2020-01-14'))
-    temp_scales = beta_scales %>% mutate(scale_beta= case_when((time >= start) ~ scale,
-                                            (time < start) ~ 1))
-
-    
+    print(scale)
     # For model labels
     if (scale == 1.0){
         scenario = 100
@@ -139,6 +127,12 @@ for(scale in scales){
         scenario = (1 - (scale-1)) * 100
     }
     
+    temp_scales = get_scale(as.numeric(today-reference_date),
+                     as.numeric(intervention_lift_date - reference_date),
+                     simstart,
+                     simend,
+                     scale)
+        
     foreach(jobid=1:nrow(design), .combine='rbind') %do% {
         pars$beta1 = design[jobid, 'beta1']
         pars$beta2_1 = design[jobid, 'beta2_1']
@@ -168,7 +162,7 @@ for(scale in scales){
             ) %>% process_pomp_covid_output(agg_regions=T)
 
         sims <- simout$plotting_output
-
+        
         # Calculate non-hospitalized deaths
         nh <- add_non_hospitalized_deaths(simout, pars) %>% filter(Time <= max(sims$Time))
         nh$Parset=jobid
@@ -240,8 +234,41 @@ for(scale in scales){
     
     bind_rows(projection_daily, projection_weekly) -> final_projection
     
-    write.csv(final_projection, sprintf("%s-cobeylab-ILCovid_%s_3.csv", Sys.Date(), scenario))
+    write.csv(final_projection, sprintf("%s-UChicago-CovidIL_%s.csv", today, scenario))
 }
 
+```
+
+Check forecast on last day
+```{r}
+model = 100
+end_date = '2020-06-13'
+
+df = read.csv(sprintf('2020-05-05-cobeylab-CovidIL_%s.csv', model))
+df %>% filter(quantile %in% c(0.5, 0.025, 0.975), target_end_date==end_date, grepl('day ahead inc death', target))
+```
+
+```{r}
+model = 80
+end_date = '2020-06-13'
+
+df = read.csv(sprintf('2020-05-05-cobeylab-CovidIL_%s.csv', model))
+df %>% filter(quantile %in% c(0.5, 0.025, 0.975), target_end_date==end_date, grepl('day ahead inc death', target))
+```
+
+```{r}
+model = 60
+end_date = '2020-06-13'
+
+df = read.csv(sprintf('2020-05-05-cobeylab-CovidIL_%s.csv', model))
+df %>% filter(quantile %in% c(0.5, 0.025, 0.975), target_end_date==end_date, grepl('day ahead inc death', target))
+```
+
+```{r}
+model = 40
+end_date = '2020-06-13'
+
+df = read.csv(sprintf('2020-05-05-cobeylab-CovidIL_%s.csv', model))
+df %>% filter(quantile %in% c(0.5, 0.025, 0.975), target_end_date==end_date, grepl('day ahead inc death', target))
 ```
 
