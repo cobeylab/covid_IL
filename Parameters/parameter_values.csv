@@ -1,6 +1,8 @@
 param_name,value
 tmin,1
-tmax,100
+tmax,200
+inference,1
+simulation,0
 inv_sigma,3.5
 theta_test,0.85
 beta1,0.1
@@ -15,6 +17,7 @@ inv_gamma_m,7.5
 inv_gamma_c,8
 inv_gamma_h,4.6
 inv_mu_h,5.75
+inv_mu_m,10
 inv_mu_c,5
 nu_1,0.5
 nu_3,0.95
@@ -30,7 +33,7 @@ alpha_IC2,6
 alpha_IC3,6
 alpha_IH4,6
 t_start,62
-t_end,105
+t_end,200
 scalework,0.6
 scalehome,1
 scaleschool,0
@@ -89,3 +92,13 @@ frac_severe_init,0.065
 t_reporting_adjustment,75
 lower_bound_reporting_uncertainty,0.8
 n_regions,3
+beta_noise_amplitude,0.05
+phi_1,1
+phi_2,1
+phi_3,1
+phi_4,1.00E+00
+phi_5,0.998397795
+phi_6,0.997966907
+phi_7,0.991007142
+phi_8,0.987550689
+phi_9,0.963720265
