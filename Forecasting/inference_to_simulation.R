@@ -1,9 +1,5 @@
 ## Source simulation infrastructure
 source('simulation_statewide.R')
-
-intervention_start = as.numeric(intervention_start_date - reference_date)
-scale_beta_start = as.numeric(scale_beta_start_date - reference_date)
-
 # CSnippets
 
 rprocess_Csnippet <- read_Csnippet(rprocFile)
@@ -12,13 +8,6 @@ rinit_Csnippet <- read_Csnippet(initFile)
 # import scaling for nu
 nu_scales = read.csv(nu_scales_file)
 row.names(nu_scales) = nu_scales$time
-
-# generate scaling for beta
-beta_scales <- data.frame(time = c(1:as.numeric(end_projection_date - reference_date)),
-                          scale_beta = NA
-) 
-beta_scales[beta_scales$time < scale_beta_start,]$scale_beta = 1.0
-beta_scales[beta_scales$time >= scale_beta_start,]$scale_beta = beta_scaling
 
 # import fraction underreported covariate
 fraction_underreported = read.csv(fraction_underreported_file)
@@ -47,78 +36,174 @@ pars = as.numeric(par_frame$value)
 names(pars) = par_frame$param_name
 pars = as.list(pars)
 
-## Set intervention start
-pars$t_start = intervention_start
-
-## Set intervention strength
-
-  pars$scalework =scalework
-  pars$scaleschool=scaleschool
-  pars$scaleother=scaleother
-  pars$scalehome=scalehome
-
-
+## Set up simulation timng params
 t0_sim = as.numeric(start_projection_date - reference_date)
+simend = as.numeric(end_projection_date - reference_date)
 pars$tmin=t0_sim
-pars$tmax <- as.numeric(end_projection_date - reference_date)
-pars$t_end <- as.numeric(intervention_end_date - reference_date)
-input_points <- read.csv(input_points_file) %>% 
-  arrange(-loglik) 
-  
+pars$tmax = simend 
 
-for (row in c(1:nrow(input_points))){
-  cat("row is ", row, "\n")
-  r = input_points[row, ]
-  pars$beta1 = r[['beta1']]
-  pars$beta2_1 = r[['beta2_1']]
-  pars$beta2_2 = r[['beta2_2']]
-  pars$beta2_3 = r[['beta2_3']]
-  pars$num_init_1 = r[['num_init_1']]
-  pars$num_init_2 = r[['num_init_2']]
-  pars$num_init_3 = r[['num_init_3']]
-  n_projections = r[['num_sims']]
-  
-  sim_full <- simulate_pomp_covid(
-      n_age_groups=nrow(population_list[[1]]),
-      n_regions = 3,
-      nsim= n_projections, 
-      input_params=pars,
-      delta_t=deltaT,
-      contacts=pomp_contacts,
-      population_list = population_list,
-      nu_scales=nu_scales,
-      beta_scales= beta_scales,
-      frac_underreported = fraction_underreported,
-      rprocess_Csnippet = rprocess_Csnippet,
-      initialize = T,
-      rinit_Csnippet = rinit_Csnippet
-      ) 
-  
-  ## Generate the direct simulation output
-  sim_full %>% process_pomp_covid_output(agg_regions = regional_aggregation)  -> d
-  
-  d_plot = as.data.frame(d$plotting_output) %>% filter(!is.na(Compartment))
-  
-  ## Generate new, lagged deaths that occurred outside of the hospital ---------------------------------------------------------------------
-  df_new_nonhosp_deaths <- add_non_hospitalized_deaths(sim_full = sim_full,
-                                                       pars = pars,
-                                                       regional_aggregation = regional_aggregation) %>% 
-    as.data.frame()
-  
-  df_new_nonhosp_deaths_leading_zeros <- rbind(df_new_nonhosp_deaths,
-                                 data.frame(expand.grid(Time = as.numeric(c(min(sim_full$raw_simulation_output$time):(min(sim_full$raw_simulation_output$time) + time_lag_non_hosp_deaths-1))),
-                                                        SimID = unique(df_new_nonhosp_deaths$SimID),
-                                                        Compartment = as.character(unique(df_new_nonhosp_deaths$Compartment)),
-                                                        Cases = 0))) %>% arrange(Time)
+pars <- add_interventions(intervention_table_filename, pars)
 
-  d_plot <- rbind(d_plot, df_new_nonhosp_deaths_leading_zeros)
-
-  d_plot$Date = as.Date("2020-01-14") + d_plot$Time
-  d_plot$Parset = row
-    
-  filename = paste0(output_filename,"_", row, ".csv")
-  write.csv(d_plot, file=filename)
-  
+get_obsprob = function(Time){
+  pars$nu_3 * pars$theta_test * (1 - fraction_underreported[as.character(Time), 'frac_underreported'] * runif(length(Time), 0.8, 1))
 }
 
+for(i in c(1:length(scales))){
+  
+  beta_scaling = scales[i]
+  
+  # Generate scaling for beta
+  beta_scales <- get_scale(t_logistic_start = as.numeric(today - reference_date),
+                           intervention_lift = as.numeric(intervention_lift_date - reference_date),
+                           simstart =  as.numeric(start_projection_date - reference_date),
+                           simend = as.numeric(end_projection_date - reference_date),
+                           max_scale = beta_scaling
+                           )
+  
+  
+  # Define scenario based on beta scale
+  if (beta_scaling == 1.0){
+    scenario = 100
+  } else{
+    scenario = (1 - (beta_scaling - 1)) * 100
+  }
+  
+  cat("running scenario ", scenario, "\n")
+  temp_scales = beta_scales
+  
+  pars$beta_noise_amplitude = beta_noise_amplitude
+  
+  design <- read.csv(input_points_file) %>% 
+    arrange(-loglik) 
+  
+  final = data.frame()
+  sims_total_combined = data.frame()
+  
+  for(jobid in c(1:nrow(design))){
+    r = design[jobid, ]
+    pars$beta1 = r[['beta1']]
+    pars$beta2_1 = r[['beta2_1']]
+    pars$beta2_2 = r[['beta2_2']]
+    pars$beta2_3 = r[['beta2_3']]
+    pars$num_init_1 = r[['num_init_1']]
+    pars$num_init_2 = r[['num_init_2']]
+    pars$num_init_3 = r[['num_init_3']]
+    n_projections = r[['num_sims']]
+    
+    sim_full <- simulate_pomp_covid(
+        n_age_groups=nrow(population_list[[1]]),
+        n_regions = 3,
+        nsim= n_projections, 
+        input_params=pars,
+        delta_t=deltaT,
+        contacts=pomp_contacts,
+        population_list = population_list,
+        nu_scales=nu_scales,
+        beta_scales= beta_scales,
+        frac_underreported = fraction_underreported,
+        rprocess_Csnippet = rprocess_Csnippet,
+        initialize = T,
+        rinit_Csnippet = rinit_Csnippet
+        ) 
+    
+    ## Generate the direct simulation output
+    sim_full %>% process_pomp_covid_output(agg_regions = regional_aggregation)  -> simout
+    
+    sims_total = as.data.frame(simout$plotting_output) %>% 
+      filter(!is.na(Compartment))
+  
+    # Calculate latent non-hospitalized deaths
+    nh <- add_non_hospitalized_deaths(simout, pars, regional_aggregation=regional_aggregation) %>% filter(Time <= max(sims_total$Time))
+    nh$parset=jobid
+    
+    # Impose observation model on hospitalized deaths
+    hd = sims_total %>% filter(Compartment == 'nHD') %>%
+      mutate(Cases = rbetabinom(1, Cases, get_obsprob(Time), pars$dispersion))
+    
+    # Make forecasting hub output if we are aggregating the regions for the statewide model
+    if (regional_aggregation){
+      cumulative_hd = hd %>%
+        group_by(SimID) %>%
+        arrange(Time) %>%
+        mutate(Compartment='D',
+               Cases=cumsum(Cases)) %>%
+        ungroup()
+      
+      nh = get_reported_non_hospitalized_deaths(nh, regional_aggregation=regional_aggregation) %>%
+        mutate(Cases=Cases_reported) %>%
+        ungroup() %>%
+        select(SimID, Time, Compartment, Cases)
+      
+      cumulative_nh = nh %>%
+        group_by(SimID) %>%
+        arrange(Time) %>%
+        mutate(Compartment='DnH',
+               Cases=cumsum(Cases)) %>%
+        ungroup()
+      
+      # Add to output
+      sims <- bind_rows(hd, cumulative_hd, nh, cumulative_nh)
+      
+      new_deaths <- sims %>%
+        filter(Compartment %in% c('nHD', 'nDnH')) %>%
+        group_by(SimID, Time) %>%
+        summarize(Cases=sum(Cases)) %>%
+        mutate(Compartment='nD')
+      
+      tot_deaths <- sims %>%
+        filter(Compartment %in% c('D', 'DnH')) %>%
+        group_by(SimID, Time) %>%
+        summarize(Cases=sum(Cases)) %>%
+        mutate(Compartment='D')
+      
+      sims <- bind_rows(new_deaths, tot_deaths)
+      sims$parset = jobid
+      sims = as.data.frame(sims)
+      final <- rbind(final, sims)
+    } 
+    
+    # For regional models, we can skip the forecast hub formatting
+    if(!regional_aggregation){
+        nh = get_reported_non_hospitalized_deaths(nh, regional_aggregation=regional_aggregation) %>%
+          mutate(Cases=Cases_reported) %>%
+          ungroup() %>%
+          select(SimID, Time, Compartment, Cases, Region)
 
+        cumulative_nh = nh %>%
+          group_by(SimID, Region) %>%
+          arrange(Time) %>%
+          mutate(Compartment='DnH',
+                 Cases=cumsum(Cases)) %>%
+          ungroup()
+    
+        cumulative_hd = hd %>%
+          group_by(SimID, Region) %>%
+          arrange(Time) %>%
+          mutate(Compartment='D',
+                 Cases=cumsum(Cases)) %>%
+          ungroup()
+      }
+
+  
+    sims_total <- rbind(sims_total,
+                        hd %>% mutate(Compartment = "Reported hd"),
+                        nh %>% mutate(Compartment = "Reported nhd"))
+
+    sims_total$parset = jobid
+    sims_total = as.data.frame(sims_total)
+    sims_total_combined = rbind(sims_total_combined, sims_total)
+  }
+  
+  
+  ## Output files for forecasting hub
+  if(regional_aggregation == T){
+    format_for_covid_hub(final) -> projection_daily
+    format_for_covid_hub_week(final) -> projection_weekly
+    bind_rows(projection_daily, projection_weekly) -> final_projection
+    
+    write.csv(final_projection, paste0(output_path, sprintf("%s-UChicago-CovidIL_%s.csv", today, scenario)))
+  }
+  ## Output files for plotting
+  sims_total_combined$Date = reference_date + sims_total_combined$Time
+  write.csv(sims_total_combined, paste0(output_path,sprintf("plotting_output_%s.csv", scenario)))
+}

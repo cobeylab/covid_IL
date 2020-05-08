@@ -1,11 +1,12 @@
 ---
 title: "Simulate from maximum likelihood parameter estimates"
 author: Sylvia Ranjeva
-date: May 1, 2020
+date: May 6, 2020
 output: html_document
 ---
-Code to simulate interventions based on scaling of the post-intervention transmission rate beginning on a specified date at increases of 20, 40, and 60%. 
+Code to simulate interventions based on scaling of post-intervention beta beginning 5/1/2020 at increases of 20, 40, and 60% transmission rate. 
 
+First, set up the code and specify the parameters for the forecasting:
 ```{r}
 require(dplyr)
 require(pomp)
@@ -17,79 +18,58 @@ require(reshape2)
 require(dplyr)
 require(cowplot)
 require(scales)
-
+require(MMWRweek)
+require(rmutil)
 
 select <- dplyr::select
 rename <- dplyr::rename
 summarize <- dplyr::summarise
 contains <- dplyr::contains
 
-root <- '../../../'
+root <- '../'
 source(file.path(root, '_covid_root.R'))
 
 covid_set_root(root)
 
-input_points_file =  #parameters file from the inference outputs folder 
-source("input_file_specification.R")
+input_points_file ="consolidated.all.sample_from_surface.revised2.csv"
+source("input_file_specification.R") # script to read in necessary files
 
 # Projection specifications: all projections
 reference_date <- as.Date("2020-01-14") # All numeric times in reference to this date 
-end_projection_date <- as.Date("2020-09-29")
+end_projection_date <- as.Date("2020-6-10")
 start_projection_date <- as.Date("2020-03-01")
 deltaT = 0.1 # timestep for projections 
+n_regions = 3 
 
-# Modify interventions from current values 
-modify_interventions = F  #change interventions from default params for projections?
-scalework = 0.6 # If changing interventions, specify here. 
-scaleschool = 0 
-scalehome = 1
-scaleother = 0.5
-frac_non_hosp = 0.21 # Fraction of deaths that occur outside of the hospital
-time_lag_non_hosp_deaths = 10 # days from infection to non-hospitalized deaths
-intervention_start_date <- as.Date("2020-03-16") 
-intervention_end_date <- end_projection_date # For all scenarios, simulate assuming interventions in place indefinitely
-scale_beta_start_date <- as.Date("2020-05-15")
-regional_aggregation = T # do statewide estimates
+# Specify scenarios regarding relaxation of interventions 
+scales = c(1, 1.2, 1.4, 1.6) # Scenarios for scaling of post-intervention beta
+beta_noise_amplitude = 0.05 # amplitude for noise when scaling post-intervention beta 
+intervention_lift_date <- as.Date("2021-10-15") # this is the date at which any relaxation of intervention begins
+today = as.Date(Sys.Date()) # define today for adding noise to forward post-intervention transmission 
 
-## Scenario 1: no scaling on post-intervention beta
-output_filename = "./sim_projections/projections_no_scaling"
-beta_scaling = 1.0
-t_start <- Sys.time()
-source("inference_to_simulation_statewide.R")
-t_end <- Sys.time()
-print(t_end - t_start)
-
-## Scenario 2: scale up 20% 
-output_filename = "./sim_projections/projections_scale_20"
-beta_scaling = 1.2
-t_start <- Sys.time()
-source("inference_to_simulation_statewide.R")
-t_end <- Sys.time()
-print(t_end - t_start)
-
-## Scenario 2: scale up 40% 
-output_filename = "./sim_projections/projections_scale_40"
-beta_scaling = 1.4
-t_start <- Sys.time()
-source("inference_to_simulation_statewide.R")
-t_end <- Sys.time()
-print(t_end - t_start)
-
-## Scenario 2: scale up 60% 
-output_filename = "./sim_projections/projections_scale_60"
-beta_scaling = 1.6
-t_start <- Sys.time()
-source("inference_to_simulation_statewide.R")
-t_end <- Sys.time()
-print(t_end - t_start)
-
-
-## Plot results 
-file_path = "./sim_projections_5/"
-plot_filename <- "outputs.png"
-intervention_scenarios <- c("no_scaling", "20", "40", "60")
-this_date <- "April 30, 2020"
-source("plot_intervention_comparisons.R")
+regional_aggregation = T # If true, do statewide estimates
 
 ```
 
+Next, generate the simulation results as a .csv file
+```{r}
+# Output filepath 
+output_path = "./sim_projections/"
+
+# Run the simulation
+source("inference_to_simulation.R")
+
+```
+
+Now, make the relevant plots 
+```{r}
+output_path = "./region_projections/" # where to access the result files 
+plot_filename <- "outputs.png"
+IDPH_death_data_filename = "covidtracking_IDPH.csv" # Must include file with IDPH reported new deaths per day
+intervention_scenarios <- c("100", "80", "60", "40")
+hospital_capacity = 35031 # Total hospital beds in state
+ICU_capacity = 3686
+this_date <- "April 30, 2020" # Specify the last date of data used for inference
+source("plot_intervention_comparisons.R")
+
+```
