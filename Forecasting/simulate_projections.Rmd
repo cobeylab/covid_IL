@@ -36,7 +36,7 @@ source("input_file_specification.R") # script to read in necessary files
 
 # Projection specifications: all projections
 reference_date <- as.Date("2020-01-14") # All numeric times in reference to this date 
-end_projection_date <- as.Date("2020-6-13")
+end_projection_date <- as.Date("2020-06-13")
 start_projection_date <- as.Date("2020-03-01")
 deltaT = 0.1 # timestep for projections 
 n_regions = 3 
@@ -72,4 +72,65 @@ ICU_capacity = 3686
 this_date <- "May 8, 2020" # Specify the last date of data used for inference
 source("plot_intervention_comparisons.R")
 
+```
+Calculate transmission reductions
+
+```{r}
+# get mle
+mle = read.csv('latest_fit_results/consolidated.all.sample_from_surface.csv') %>% arrange(desc(loglik))
+mle = mle[1, ]
+
+# get pop sizes
+pop1 = sum(population1$POPULATION)
+pop2 = sum(population2$POPULATION)
+pop3 = sum(population3$POPULATION)
+
+# Calculate average transmission reduction
+compartments = c('home','school','work','other')
+foreach (i=1:length(compartments)) %do%{
+    matrix(pomp_contacts[[compartments[i]]][1:81], nrow=9, ncol=9)
+} -> contacts1 
+
+foreach (i=1:length(compartments)) %do%{
+    matrix(pomp_contacts[[compartments[i]]][82:162], nrow=9, ncol=9)
+} -> contacts2 
+
+foreach (i=1:length(compartments)) %do%{
+    matrix(pomp_contacts[[compartments[i]]][162:242], nrow=9, ncol=9)
+} -> contacts3
+get_dom_eigen = function(m, scalings = c(1,1,1,1)){
+    compartments = c('home','school','work','other')
+    base = matrix(0, ncol=9, nrow=9)
+    for (i in seq(1:length(compartments))){
+        base = base + m[[i]] * scalings[i]
+    }
+    Re(eigen(base)$values[1])
+}
+
+reduction1 = (1 - (get_dom_eigen(contacts1, c(1, 0, 0.6, 0.5)) * mle$beta2_1) / (get_dom_eigen(contacts1) * mle$beta1)) * (pop1/sum(pop1, pop2, pop3))
+reduction2 = (1 - (get_dom_eigen(contacts2, c(1, 0, 0.6, 0.5)) * mle$beta2_2) / (get_dom_eigen(contacts2) * mle$beta1)) * (pop2/sum(pop1, pop2, pop3))
+reduction3 = (1 - (get_dom_eigen(contacts3, c(1, 0, 0.6, 0.5)) * mle$beta2_3) / (get_dom_eigen(contacts3) * mle$beta1)) * (pop3/sum(pop1, pop2, pop3))
+
+print(reduction1 + reduction2 + reduction3)
+
+s = 1.2
+reduction1 = (1 - (get_dom_eigen(contacts1, c(1, 0, 0.6, 0.5)) * mle$beta2_1) / (get_dom_eigen(contacts1) * mle$beta1) * s) * (pop1/sum(pop1, pop2, pop3))
+reduction2 = (1 - (get_dom_eigen(contacts2, c(1, 0, 0.6, 0.5)) * mle$beta2_2) / (get_dom_eigen(contacts2) * mle$beta1) * s) * (pop2/sum(pop1, pop2, pop3))
+reduction3 = (1 - (get_dom_eigen(contacts3, c(1, 0, 0.6, 0.5)) * mle$beta2_3) / (get_dom_eigen(contacts3) * mle$beta1) * s) * (pop3/sum(pop1, pop2, pop3))
+
+print(reduction1 + reduction2 + reduction3)
+
+s = 1.4
+reduction1 = (1 - (get_dom_eigen(contacts1, c(1, 0, 0.6, 0.5)) * mle$beta2_1) / (get_dom_eigen(contacts1) * mle$beta1) * s) * (pop1/sum(pop1, pop2, pop3))
+reduction2 = (1 - (get_dom_eigen(contacts2, c(1, 0, 0.6, 0.5)) * mle$beta2_2) / (get_dom_eigen(contacts2) * mle$beta1) * s) * (pop2/sum(pop1, pop2, pop3))
+reduction3 = (1 - (get_dom_eigen(contacts3, c(1, 0, 0.6, 0.5)) * mle$beta2_3) / (get_dom_eigen(contacts3) * mle$beta1) * s) * (pop3/sum(pop1, pop2, pop3))
+
+print(reduction1 + reduction2 + reduction3)
+
+s = 1.6
+reduction1 = (1 - (get_dom_eigen(contacts1, c(1, 0, 0.6, 0.5)) * mle$beta2_1) / (get_dom_eigen(contacts1) * mle$beta1) * s) * (pop1/sum(pop1, pop2, pop3))
+reduction2 = (1 - (get_dom_eigen(contacts2, c(1, 0, 0.6, 0.5)) * mle$beta2_2) / (get_dom_eigen(contacts2) * mle$beta1) * s) * (pop2/sum(pop1, pop2, pop3))
+reduction3 = (1 - (get_dom_eigen(contacts3, c(1, 0, 0.6, 0.5)) * mle$beta2_3) / (get_dom_eigen(contacts3) * mle$beta1) * s) * (pop3/sum(pop1, pop2, pop3))
+
+print(reduction1 + reduction2 + reduction3)
 ```
