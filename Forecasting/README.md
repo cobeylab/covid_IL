@@ -11,8 +11,6 @@ For the baseline model scenario, we maintain the inferred value of the post-SIP 
 2. The post-SIP transmission rate increases by 40%. At our current parameter estimates, this corresopnds to a 69% reduction in pre-SIP transmission.
 3. The post-SIP transmission rate increases by 60%. At our current estimates, this corresopnds to a 65% reduction in pre-SIP transmission.
 
-We assume that these increases in post
-
 Figure 1 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through June 13, 2020 under the four model scenarios. 
 
 ![Figure 1](./plots/summary_outputs.png)
