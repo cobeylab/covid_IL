@@ -437,7 +437,7 @@ if(regional_aggregation == T){
   
   save_plot(paste0("summary_indefinite_statewide_",plot_filename), p_output_indefinite, base_width = 12, base_height = 8) 
   
-  death_data <- read.csv(IDPH_death_data_filename) %>% mutate(Date = as.Date(date, format = "%m/%d/%Y")) %>% 
+  death_data <- read.csv(IDPH_death_data_filename) %>% mutate(Date = as.Date(date)) %>% 
     select(Date, new_deaths) %>% 
     mutate(Compartment = "Daily reported deaths",
            intervention = "Reported deaths, IDPH")
