@@ -11,14 +11,15 @@ Briefly, through repeated rounds of simulating the dynamics and then perturbing 
 
 ## Model file descriptions
 
-* `rprocess_interventionbeta_IH4.c`: Process model that describes how people move through compartments at each timestep.
-* `initializer_compartment_distribute_IH4.c`: Initializer that places people into infectious classes at the beginning of the simulation.
+* `rprocess_noise_non_hosp_deaths_region_contacts.c`: Process model that describes how people move through compartments at each timestep.
+* `initializer_non_hosp_deaths.c`: Initializer that places people into infectious classes at the beginning of the simulation.
 * `dmeasure_deaths_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths. Observed deaths at each timestep are a sample of those who have died in the hospital. We assume that we do not observe all COVID-19 deaths because testing does not detect all infections.
 * `dmeasure_deaths_ICU_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths and confirmed ICU cases. Observed deaths at each timestep are a sample of those who have died in the hospital. Observed ICU cases are a sample of all people in ICU model compartments. We assume that we do not observe all COVID-19 deaths and ICU cases because testing does not detect all infections.
 
 ## Run script descriptions
 * `inference_functions.R`: Essential functions for creating and using `pomp` objects. 
 * `1_mif_single.R`: Runs `mif` search from Latin hypercube sample of points.
-* `2_get_best_points_from_mif.R`: Gets best points across all `mif` chains.
-* `3_pfilter_best_points.R`: Evaluates likelihood on best `mif` points with `pfilter`.
-* `4_pfilter_search.R`: Performs a pfilter search on a Latin hypercube sample of points that surround the MLE.
+* `2_get_end_points_from_mif.R`: Aggregate endpoints of mif chains.
+* `3_pfilter_end_points.R`: Evaluates likelihood on end `mif` points with `pfilter`.
+* `4_pfilter_grid_search.R`: Performs a pfilter search on a Latin hypercube sample of points that surround the MLE.
+* `5_simulate_and_plot.R`: Aggregates all points and simulates from MLE.
