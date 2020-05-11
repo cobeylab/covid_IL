@@ -118,7 +118,7 @@ for(i in c(1:length(scales))){
     
     # Impose observation model on hospitalized deaths
     hd = sims_total %>% filter(Compartment == 'nHD') %>%
-      mutate(Cases = rbetabinom(1, Cases, get_obsprob(Time), pars$dispersion))
+      mutate(Cases = rbetabinom(length(Time), Cases, get_obsprob(Time), pars$dispersion))
     
     # Make forecasting hub output if we are aggregating the regions for the statewide model
     if (regional_aggregation){
