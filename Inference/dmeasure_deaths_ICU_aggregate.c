@@ -1,4 +1,4 @@
-const double *new_deaths = &new_deaths_1_1; // latent incident deaths
+const double *new_hosp_deaths = &new_hosp_deaths_1_1; // latent incident deaths
 const double *ObsDeaths = &ObsDeaths_1; // observed incident deaths in each region
 const double *ObsICU = &ObsICU_1; // observed people in the ICU in each region
 const double *IC2 = &IC2_1_1_1; // latent covid-positive ICU
@@ -21,17 +21,8 @@ for (int region=0; region<n_regions; region++){
         // loop and aggregate latent incident deaths accross age group
         double agg_new_D = 0;
         for (int i=0; i<num_age_groups; i++){
-            agg_new_D += new_deaths[i + region * num_age_groups];
+            agg_new_D += new_hosp_deaths[i + region * num_age_groups];
         }
-
-        // Adjust for underreporting
-        //int true_ObsDeaths;
-        //if (t < t_reporting_adjustment){
-        //    double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 1);
-        //    true_ObsDeaths  = ObsDeaths[region] / (1-(frac_underreported*frac_hospitalized_deaths)); 
-        //} else{
-        //    true_ObsDeaths = ObsDeaths[region];
-        //}
         double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 1);
         double underreporting =  (1-(frac_underreported*frac_hospitalized_deaths)); 
 
