@@ -31,12 +31,12 @@ source(file.path(root, '_covid_root.R'))
 
 covid_set_root(root)
 
-input_points_file ="consolidated.all.sample_from_surface.revised2.csv"
+input_points_file ="latest_fit_results/consolidated.all.sample_from_surface.csv"
 source("input_file_specification.R") # script to read in necessary files
 
 # Projection specifications: all projections
 reference_date <- as.Date("2020-01-14") # All numeric times in reference to this date 
-end_projection_date <- as.Date("2020-6-10")
+end_projection_date <- as.Date("2020-6-13")
 start_projection_date <- as.Date("2020-03-01")
 deltaT = 0.1 # timestep for projections 
 n_regions = 3 
@@ -44,7 +44,7 @@ n_regions = 3
 # Specify scenarios regarding relaxation of interventions 
 scales = c(1, 1.2, 1.4, 1.6) # Scenarios for scaling of post-intervention beta
 beta_noise_amplitude = 0.05 # amplitude for noise when scaling post-intervention beta 
-intervention_lift_date <- as.Date("2021-10-15") # this is the date at which any relaxation of intervention begins
+intervention_lift_date <- as.Date("2020-05-29") # this is the date at which any relaxation of intervention begins
 today = as.Date(Sys.Date()) # define today for adding noise to forward post-intervention transmission 
 
 regional_aggregation = T # If true, do statewide estimates
@@ -63,13 +63,13 @@ source("inference_to_simulation.R")
 
 Now, make the relevant plots 
 ```{r}
-output_path = "./region_projections/" # where to access the result files 
+output_path = "./sim_projections/" # where to access the result files 
 plot_filename <- "outputs.png"
 IDPH_death_data_filename = "covidtracking_IDPH.csv" # Must include file with IDPH reported new deaths per day
 intervention_scenarios <- c("100", "80", "60", "40")
 hospital_capacity = 35031 # Total hospital beds in state
 ICU_capacity = 3686
-this_date <- "April 30, 2020" # Specify the last date of data used for inference
+this_date <- "May 8, 2020" # Specify the last date of data used for inference
 source("plot_intervention_comparisons.R")
 
 ```
