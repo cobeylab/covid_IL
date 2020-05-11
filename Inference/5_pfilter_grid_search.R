@@ -1,5 +1,5 @@
 ## Run mif searches, can be implemented in parallel on the cluster 
-## Sylvia Ranjeva, Phil Arevalo
+## Sylvia Ranjeva
 ## April 2020
 ## -----------------------------------------------------
 
@@ -25,21 +25,36 @@ args = commandArgs(trailingOnly=TRUE)
 
 
 n_reps_pfilter=5
-n_particles_pfilter=5000
+n_particles_pfilter=10000
+num_points = 10000
 
-root <- '../'
+# initialize design
+lower_pars = c(beta1=0.035, 
+  beta2_1=0.013, 
+  beta2_2=0.01, 
+  beta2_3=0.012, 
+  num_init_1=100,
+  num_init_2=100,
+  num_init_3=3500)
+
+upper_pars = c(beta1=0.052, 
+  beta2_1=0.017, 
+  beta2_2=0.015, 
+  beta2_3=0.015, 
+  num_init_1=200,
+  num_init_2=400,
+  num_init_3=6500)
+
+design = sobolDesign(lower=lower_pars, 
+  upper=upper_pars, 
+  num_points)
+
+root <- '../../../../'
 source(file.path(root, '_covid_root.R'))
 covid_set_root(root)
 
-source(covid_get_path('Inference/inference_functions.R'))
-initFile = covid_get_path('Inference/initializer_compartment_distribute_IH4.c')
-rprocFile = covid_get_path('Inference/rprocess_interventionbeta_IH4.c')
-nu_scales_file = covid_get_path('Data/nu_scaling.csv')
-fraction_underreported_file = covid_get_path('Data/frac_underreported.csv')
-default_par_file = covid_get_path('Parameters/parameter_values.csv')
-contact_filename = covid_get_path('Data/formatted_contacts_IL.RData')
+default_par_file = './default_parameter_values.csv'
 deltaT = 0.1
-
 
 jobid_master = as.numeric(args[1])
 arrayid = as.numeric(args[2])
@@ -48,52 +63,45 @@ dmeasFile = args[4]
 data_filename_1 = args[5]
 data_filename_2 = args[6]
 data_filename_3 = args[7]
-
 population_filename_1 = args[8]
 population_filename_2 = args[9]
 population_filename_3 = args[10]
+simstart = args[11]
+simend = args[12]
+min_data_time = args[13]
+intervention_start=args[14]
+num_cores=as.numeric(args[15])
+maxjobs=as.numeric(args[16])
+min_data_time_ICU = args[17]
+init_file=args[18]
+rprocFile=args[19]
+nu_scales_file=args[20]
+fraction_underreported_file=args[21]
+contact_filename=args[22]
+inference_file=args[23]
+t_ref=args[24]
+intervention_file=args[25]
+source(covid_get_path(inference_file))
 
-simstart = as.numeric(args[11])
-simend = as.numeric(args[12])
-min_data_time = as.numeric(args[13])
-intervention_start=as.numeric(args[14])
+# Setting dates
 
-scalework=as.numeric(args[15])
-scaleschool=as.numeric(args[16])
-scalehome=as.numeric(args[17])
-scaleother=as.numeric(args[18])
-num_cores=as.numeric(args[19])
-maxjobs=as.numeric(args[20])
+simstart = convert_date_to_time(simstart, t_ref)
+simend = convert_date_to_time(simend, t_ref)
+min_data_time = convert_date_to_time(min_data_time, t_ref)
+intervention_start = convert_date_to_time(intervention_start, t_ref)
+min_data_time_ICU = convert_date_to_time(min_data_time_ICU, t_ref)
 
-min_data_time_ICU = as.numeric(args[21])
 
-num_points = 5000
 cl <- makeCluster(num_cores)
 registerDoParallel(cl)
 
-
-# initialize design
-lower_pars = c(beta1=0.018, 
-  beta2_1=0.0055, 
-  beta2_2=0.0055, 
-  beta2_3=0.007, 
-  num_init_1=70,
-  num_init_2=70,
-  num_init_3=1500)
-
-upper_pars = c(beta1=0.024, 
-  beta2_1=0.009, 
-  beta2_2=0.009, 
-  beta2_3=0.009, 
-  num_init_1=200,
-  num_init_2=200,
-  num_init_3=3500)
-
-design = sobolDesign(lower=lower_pars, 
-  upper=upper_pars, 
-  num_points)
-
 print('Reading in files')
+initFile = covid_get_path(init_file)
+rprocFile = covid_get_path(rprocFile)
+nu_scales_file = covid_get_path(nu_scales_file)
+fraction_underreported_file = covid_get_path(fraction_underreported_file)
+contact_filename = covid_get_path(contact_filename)
+
 # CSnippets
 dmeasFile = covid_get_path(dmeasFile)
 dmeasure_snippet <- read_Csnippet(dmeasFile)
@@ -103,6 +111,13 @@ rinit_snippet <- read_Csnippet(initFile)
 # import scaling for nu
 nu_scales = read.csv(nu_scales_file)
 row.names(nu_scales) = nu_scales$time
+
+# Set beta scales to be the same as nu scales, i.e., 1 all over
+beta_scales = get_scale(simend+100,
+                        simend+100,
+                        simstart,
+                        simend,
+                        1)
 
 # import fraction underreported covariate
 fraction_underreported = read.csv(fraction_underreported_file)
@@ -131,14 +146,9 @@ n_age_groups = nrow(population1)
 data_1 = get_civis_data(data_filename_1)  %>% mutate(ObsDeaths_1=ObsDeaths, ObsICU_1=ObsICU) %>% select(time, ObsDeaths_1, ObsICU_1)
 data_2 = get_civis_data(data_filename_2)  %>% mutate(ObsDeaths_2=ObsDeaths, ObsICU_2=ObsICU) %>% select(time, ObsDeaths_2, ObsICU_2)
 data_3 = get_civis_data(data_filename_3)  %>% mutate(ObsDeaths_3=ObsDeaths, ObsICU_3=ObsICU) %>% select(time, ObsDeaths_3, ObsICU_3)
-
-
 data = merge(data_1, data_2, by='time')
 data = merge(data, data_3, by='time')
-
 # Add NAs if necessary
-
-
 data <- data %>% filter(time>=simstart, time<=simend) %>% 
                  mutate(
                         ObsDeaths_1=ifelse(time<min_data_time, NA, ObsDeaths_1),
@@ -159,14 +169,9 @@ pars = as.numeric(par_frame$value)
 names(pars) = par_frame$param_name
 pars = as.list(pars)
 
-## Set intervention start
-pars$t_start = intervention_start
-
-## Set intervention strength
-pars$scalework =scalework
-pars$scaleschool=scaleschool
-pars$scaleother=scaleother
-pars$scalehome=scalehome
+# Set intervention scaling
+pars = add_interventions(covid_get_path(intervention_file), pars)
+print(pars)
 
 loopstart = (jobid_master - 1) * maxjobs + 1
 loopend = loopstart + (maxjobs-1)
@@ -199,6 +204,7 @@ foreach(jobid=loopstart:loopend,
           contacts=pomp_contacts,
           population=population_list,
           nu_scales=nu_scales,
+          beta_scales=beta_scales,
           frac_underreported=fraction_underreported,
           dmeasure_Csnippet = dmeasure_snippet,
           rprocess_Csnippet = rprocess_snippet,
