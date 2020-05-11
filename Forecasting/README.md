@@ -31,7 +31,7 @@ Figure 2 gives the projected daily reported hosptialized and non-hospitalized de
 * `plot_intervention_comparisons.R`: R script to plot simulation output. Called within `simulate_projections.Rmd`
 
 ## Changelog
-###2020-05-11
+### 2020-05-11
 * Fitted with data through May 8, 2020. 
 * Changed date of transmission increase from May 15 to May 29.
 * Added non-hospitalized deaths to process model instead of calculating post-hoc. 
