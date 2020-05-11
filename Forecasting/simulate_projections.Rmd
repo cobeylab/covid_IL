@@ -47,7 +47,7 @@ beta_noise_amplitude = 0.05 # amplitude for noise when scaling post-intervention
 intervention_lift_date <- as.Date("2020-05-29") # this is the date at which any relaxation of intervention begins
 today = as.Date(Sys.Date()) # define today for adding noise to forward post-intervention transmission 
 
-regional_aggregation = T # If true, do statewide estimates
+regional_aggregation = F # If true, do statewide estimates
 
 ```
 
@@ -63,7 +63,8 @@ source("inference_to_simulation.R")
 
 Now, make the relevant plots 
 ```{r}
-output_path = "./sim_projections/" # where to access the result files 
+regional_aggregation = T
+output_path = "./sim_projections/statewide/" # where to access the result files 
 plot_filename <- "outputs.png"
 IDPH_death_data_filename = "covidtracking_IDPH.csv" # Must include file with IDPH reported new deaths per day
 intervention_scenarios <- c("100", "80", "60", "40")

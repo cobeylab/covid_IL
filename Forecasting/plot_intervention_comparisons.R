@@ -321,8 +321,27 @@ if(regional_aggregation == T){
                            x = c(as.Date("2020-03-15"),as.Date("2020-03-15"), as.Date("2020-04-01"), as.Date("2020-04-01")),
                            y = c(0,0, hospital_capacity + hospital_capacity/ICU_capacity*200, ICU_capacity + 200 )
                                  )
-   
+  ann_text_lift = data.frame(Compartment = unique(df_sum_new$Compartment),
+                             label = "relax SIP",
+                             x = intervention_lift_date - 3,
+                             y = c(10000, 0.01, 2.5e4, 2.5e3)
+  )   
   
+  ann_text_forecast = data.frame(Compartment = unique(df_sum_new$Compartment),
+                             label = "forecast start",
+                             x = today - 3,
+                             y = c(10000, 0.01, 2.5e4, 2.5e3)
+  )   
+  
+  ann_text_deaths_lift <- data.frame(Compartment = "Daily reported deaths",
+                           label = "relax SIP",
+                           x = intervention_lift_date - 3,
+                           y = 25)
+
+  ann_text_deaths_forecast <- data.frame(Compartment = "Daily reported deaths",
+                           label = "forecast start",
+                           x = today - 3,
+                           y = 25)  
   df_sum_new$capacity = NA
   df_sum_new[df_sum_new$Compartment == "Total hospital beds occupied",]$capacity = hospital_capacity
   df_sum_new[df_sum_new$Compartment == "Total ICU beds occupied",]$capacity = ICU_capacity
@@ -336,9 +355,20 @@ if(regional_aggregation == T){
     theme(axis.text = element_text(size = 10),
           axis.title = element_text(size = 10),
           legend.text = element_text(size = 10)) + 
-    theme(strip.text.x = element_text(size = 10)) + 
+    theme(strip.text.x = element_text(size = 10)) +
+    labs( color='Change in transmission', fill='Change in transmission') +
     geom_text(data = ann_text,
-              mapping = aes(x = x, y = y, label = label))
+              mapping = aes(x = x, y = y, label = label)) +
+    scale_x_date(date_labels = "%b %d") +
+    geom_vline(xintercept=today) + 
+      geom_text(data = ann_text_lift,
+                mapping = aes(x = x, y = y, label = label),
+                angle=90) +
+      geom_text(data = ann_text_forecast,
+                mapping = aes(x = x, y = y, label = label),
+                angle=90) +
+      geom_vline(xintercept=today) +
+      geom_vline(xintercept=intervention_lift_date)
   
   title <- ggdraw() + 
     draw_label(
@@ -372,7 +402,8 @@ if(regional_aggregation == T){
     #ylab("Prevalent observed and unobserved infections") + 
     theme_classic() +
     theme( axis.text = element_text(size = rel(1.1))) + 
-    theme(strip.text.x = element_text(size = 10))
+    theme(strip.text.x = element_text(size = 10)) +
+    scale_x_date(date_labels = "%b %d")
   
   p_output_2 <- plot_grid(title, 
                           p_summary_2,
@@ -395,7 +426,8 @@ if(regional_aggregation == T){
     #ylab("Prevalent observed and unobserved infections") + 
     theme_classic() +
     theme( axis.text = element_text(size = rel(1.2))) + 
-    theme(strip.text.x = element_text(size = 10))
+    theme(strip.text.x = element_text(size = 10)) +
+    scale_x_date(date_labels = "%b %d")
   
   p_output_indefinite <- plot_grid(title, 
                           p_summary_indefinite,
@@ -420,7 +452,18 @@ if(regional_aggregation == T){
     theme(axis.text = element_text(size = 10),
           axis.title = element_text(size = 10),
           legend.text = element_text(size = 10)) + 
-    theme(strip.text.x = element_text(size = 10))
+    theme(strip.text.x = element_text(size = 10)) +
+      labs( color='Change in transmission', fill = 'Change in transmission') +
+    scale_x_date(date_labels = "%b %d") +
+    geom_text(data = ann_text_deaths_lift,
+                mapping = aes(x = x, y = y, label = label),
+                angle=90) +
+    geom_text(data = ann_text_deaths_forecast,
+                mapping = aes(x = x, y = y, label = label),
+                angle=90) +
+    geom_vline(xintercept=today) +
+    geom_vline(xintercept=intervention_lift_date)
+
   
   
   title2 <- ggdraw() + 
@@ -480,7 +523,7 @@ if(regional_aggregation == F){
                            x = c(as.Date("2020-03-15"),as.Date("2020-03-15"), as.Date("2020-04-01"), as.Date("2020-04-01")),
                            y = c(0,0, hospital_capacity + hospital_capacity/ICU_capacity*200, ICU_capacity + 200 )
     )
-    
+
     
     df_sum_new$capacity = NA
     df_sum_new[df_sum_new$Compartment == "Total hospital beds occupied",]$capacity = hospital_capacity
@@ -496,8 +539,9 @@ if(regional_aggregation == F){
             axis.title = element_text(size = 10),
             legend.text = element_text(size = 10)) + 
       theme(strip.text.x = element_text(size = 10)) + 
-      geom_text(data = ann_text,
-                mapping = aes(x = x, y = y, label = label))
+      geom_text(data = ann_text_lift,
+                mapping = aes(x = x, y = y, label = label)) +
+      scale_x_date(date_labels = "%b %d")
     
     title <- ggdraw() + 
       draw_label(
@@ -531,7 +575,8 @@ if(regional_aggregation == F){
       #ylab("Prevalent observed and unobserved infections") + 
       theme_classic() +
       theme( axis.text = element_text(size = rel(1.1))) + 
-      theme(strip.text.x = element_text(size = 10))
+      theme(strip.text.x = element_text(size = 10)) +
+      scale_x_date(date_labels = "%b %d")
     
     p_output_2 <- plot_grid(title, 
                             p_summary_2,
@@ -554,7 +599,8 @@ if(regional_aggregation == F){
       #ylab("Prevalent observed and unobserved infections") + 
       theme_classic() +
       theme( axis.text = element_text(size = rel(1.2))) + 
-      theme(strip.text.x = element_text(size = 10))
+      theme(strip.text.x = element_text(size = 10)) +
+      scale_x_date(date_labels = "%b %d")
     
     p_output_indefinite <- plot_grid(title, 
                                      p_summary_indefinite,
@@ -573,7 +619,8 @@ if(regional_aggregation == F){
       theme(axis.text = element_text(size = 10),
             axis.title = element_text(size = 10),
             legend.text = element_text(size = 10)) + 
-      theme(strip.text.x = element_text(size = 10))
+      theme(strip.text.x = element_text(size = 10)) +
+      scale_x_date(date_labels = "%b %d")
     
     
     title2 <- ggdraw() + 
