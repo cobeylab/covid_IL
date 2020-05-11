@@ -32,12 +32,6 @@ alpha_IH3,6
 alpha_IC2,6
 alpha_IC3,6
 alpha_IH4,6
-t_start,62
-t_end,200
-scalework,0.6
-scalehome,1
-scaleschool,0
-scaleother,0.5
 rho_1,0.938842105
 rho_2,0.946369231
 rho_3,0.705574324
