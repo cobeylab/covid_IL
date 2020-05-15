@@ -36,16 +36,16 @@ source("input_file_specification.R") # script to read in necessary files
 
 # Projection specifications: all projections
 reference_date <- as.Date("2020-01-14") # All numeric times in reference to this date 
-end_projection_date <- as.Date("2020-06-13")
+end_projection_date <- as.Date("2020-10-01")
 start_projection_date <- as.Date("2020-03-01")
 deltaT = 0.1 # timestep for projections 
-n_regions = 3 
+#n_regions = 4 
 
 # Specify scenarios regarding relaxation of interventions 
-scales = c(1, 1.2, 1.4, 1.6) # Scenarios for scaling of post-intervention beta
+scales = c(1.385, 2.155) # Scenarios for scaling of post-intervention beta
 beta_noise_amplitude = 0.05 # amplitude for noise when scaling post-intervention beta 
-intervention_lift_date <- as.Date("2020-05-29") # this is the date at which any relaxation of intervention begins
-today = as.Date(Sys.Date()) # define today for adding noise to forward post-intervention transmission 
+intervention_lift_date <- as.Date("2020-06-01") # this is the date at which any relaxation of intervention begins
+today = as.Date(as.Date("2020-05-11")) # define today for adding noise to forward post-intervention transmission 
 
 regional_aggregation = F # If true, do statewide estimates
 
@@ -54,7 +54,7 @@ regional_aggregation = F # If true, do statewide estimates
 Next, generate the simulation results as a .csv file
 ```{r}
 # Output filepath 
-output_path = "./sim_projections/"
+output_path = "./civis_projections/"
 
 # Run the simulation
 source("inference_to_simulation.R")
@@ -64,26 +64,28 @@ source("inference_to_simulation.R")
 Now, make the relevant plots 
 ```{r}
 regional_aggregation = T
-output_path = "./sim_projections/statewide/" # where to access the result files 
-plot_filename <- "outputs.png"
+output_path = "./civis_projections/" # where to access the result files 
+plot_filename <- "4reg.outputs.png"
+reg_hosp_cap = read.csv('idph_cluster_capacities.csv')
 IDPH_death_data_filename = "covidtracking_IDPH.csv" # Must include file with IDPH reported new deaths per day
-intervention_scenarios <- c("100", "80", "60", "40")
+intervention_scenarios <- c("100", "10", "30")
 hospital_capacity = 35031 # Total hospital beds in state
 ICU_capacity = 3686
 this_date <- "May 8, 2020" # Specify the last date of data used for inference
 source("plot_intervention_comparisons.R")
 
 ```
-Calculate transmission reductions
 
+Calculate transmission reductions
 ```{r}
+library(foreach)
 # get mle
 mle = read.csv('latest_fit_results/consolidated.all.sample_from_surface.csv') %>% arrange(desc(loglik))
 mle = mle[1, ]
 
 # get pop sizes
 pop1 = sum(population1$POPULATION)
-pop2 = sum(population2$POPULATION)
+pop2 = sum(population2$POPULATION) + sum(population4$POPULATION)
 pop3 = sum(population3$POPULATION)
 
 # Calculate average transmission reduction
@@ -97,8 +99,9 @@ foreach (i=1:length(compartments)) %do%{
 } -> contacts2 
 
 foreach (i=1:length(compartments)) %do%{
-    matrix(pomp_contacts[[compartments[i]]][162:242], nrow=9, ncol=9)
+    matrix(pomp_contacts[[compartments[i]]][163:243], nrow=9, ncol=9)
 } -> contacts3
+
 get_dom_eigen = function(m, scalings = c(1,1,1,1)){
     compartments = c('home','school','work','other')
     base = matrix(0, ncol=9, nrow=9)
@@ -135,3 +138,38 @@ reduction3 = (1 - (get_dom_eigen(contacts3, c(1, 0, 0.6, 0.5)) * mle$beta2_3) / 
 
 print(reduction1 + reduction2 + reduction3)
 ```
+
+
+Calculate transmission scaling needed to increase transmission 10% or 30% of the way to pre-SIP transmission.
+```{r}
+
+reduction1 = (get_dom_eigen(contacts1, c(1, 0, 0.6, 0.5)) * mle$beta2_1) * (pop1/sum(pop1, pop2, pop3))
+reduction2 = (get_dom_eigen(contacts2, c(1, 0, 0.6, 0.5)) * mle$beta2_2) * (pop2/sum(pop1, pop2, pop3))
+reduction3 = (get_dom_eigen(contacts3, c(1, 0, 0.6, 0.5)) * mle$beta2_3) * (pop3/sum(pop1, pop2, pop3))
+
+post_transmission = reduction1 + reduction2 + reduction3
+
+reduction1 = (get_dom_eigen(contacts1) * mle$beta1) * (pop1/sum(pop1, pop2, pop3))
+reduction2 = (get_dom_eigen(contacts2) * mle$beta1) * (pop2/sum(pop1, pop2, pop3))
+reduction3 = (get_dom_eigen(contacts3) * mle$beta1) * (pop3/sum(pop1, pop2, pop3))
+pre_transmission = reduction1 + reduction2 + reduction3
+
+difference = pre_transmission - post_transmission
+
+for (s in seq(1.1, 2.5, 0.005)){
+    reduction1 = (get_dom_eigen(contacts1, c(1, 0, 0.6, 0.5)) * mle$beta2_1 * s) * (pop1/sum(pop1, pop2, pop3))
+reduction2 = (get_dom_eigen(contacts2, c(1, 0, 0.6, 0.5)) * mle$beta2_2 * s) * (pop2/sum(pop1, pop2, pop3))
+reduction3 = (get_dom_eigen(contacts3, c(1, 0, 0.6, 0.5)) * mle$beta2_3 * s) * (pop3/sum(pop1, pop2, pop3))
+
+post_transmission2 = reduction1 + reduction2 + reduction3
+if (post_transmission2 > (0.3 * difference + post_transmission)){
+    print(post_transmission2)
+    print(0.3 * difference + post_transmission)
+    print(s)
+    break
+}
+}
+
+
+```
+

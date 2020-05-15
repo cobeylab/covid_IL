@@ -5,20 +5,60 @@ We implement SIP both by scaling contact rates and by scaling the transmission r
 We assume that a SIP order scales down non-home contacts (work contacts, school contacts, and other contacts). 
 On March 16, we scaled down school contacts to 0, work contacts to 0.6 times their normal value, and other contacts to 0.5 times their normal value. 
 We then inferred a separate post-SIP transmission rate.
-For the baseline model scenario, we maintain the inferred value of the post-SIP transmission rate indefinitely. We assume that this is the maximum reduction in transmission. At our current parameter estimates, this corresponds to a 78% reduction in pre-SIP transmission rate. To model the relaxing of SIP, we project three additional scenarios:
+For the baseline model scenario, we maintain the inferred value of the post-SIP transmission rate indefinitely. We assume that this is the maximum reduction in transmission. At our current parameter estimates, this corresponds to a 79% reduction in pre-SIP transmission rate. To model the relaxing of SIP, we project two additional scenarios, assuming that an increase in transmission happens on June 1, 2020:
 
-1. The post-SIP transmission rate increases by 20%. At our current parameter estimates, this corresopnds to a 74% reduction in pre-SIP transmission rate.
-2. The post-SIP transmission rate increases by 40%. At our current parameter estimates, this corresopnds to a 69% reduction in pre-SIP transmission.
-3. The post-SIP transmission rate increases by 60%. At our current estimates, this corresopnds to a 65% reduction in pre-SIP transmission.
+1. The post-SIP transmission rate increases 10% of the way back to pre-SIP transmission.
+2. The post-SIP transmission rate increases 30% of the way back to pre-SIP transmission.
 
-Figure 1 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through June 13, 2020 under the four model scenarios. 
+
+Figure 1 gives the projected statewide incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through October 1, 2020 under the four model scenarios. 
 
 ![Figure 1](./plots/summary_outputs.png)
 
-
-Figure 2 gives the projected daily reported hosptialized and non-hospitalized deaths through June 13, 2020, and reported daily deaths from the Illinois Department of Public Health (IDPH) under the four model scenarios. 
+Figure 2 gives the projected statewide daily reported hosptialized and non-hospitalized deaths through October 1, 2020, and reported daily deaths from the Illinois Department of Public Health (IDPH) under the four model scenarios. 
 
 ![Figure 2](./plots/death_summary_outputs.png) 
+
+## Region-specific forecasts: northeast
+
+Figure 3 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through October 1, 2020 in the northeast region under the four model scenarios. 
+
+![Figure 3](./plots/region_3_summary_1__4reg.outputs.png)
+
+Figure 4 gives the projected daily reported hosptialized and non-hospitalized deaths through October 1, 2020 in the northeast region under the four model scenarios. Regional death data from IDPH are shown as points.
+
+![Figure 4](./plots/region_3_death_summary_outputs.png) 
+
+## Region-specific forecasts: north-central
+
+Figure 5 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through October 1, 2020 in the north-central region under the four model scenarios. 
+
+![Figure 5](./plots/region_1_summary_1__4reg.outputs.png)
+
+Figure 6 gives the projected daily reported hosptialized and non-hospitalized deaths through October 1, 2020 in the north-central region under the four model scenarios. Regional death data from IDPH are shown as points.
+
+![Figure 6](./plots/region_1_death_summary_outputs.png) 
+
+## Region-specific forecasts: central
+
+Figure 7 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through October 1, 2020 in the central region under the four model scenarios. 
+
+![Figure 7](./plots/region_2_summary_1__4reg.outputs.png)
+
+Figure 8 gives the projected daily reported hosptialized and non-hospitalized deaths through October 1, 2020 in the central region under the four model scenarios. Regional death data from IDPH are shown as points.
+
+![Figure 8](./plots/region_2_death_summary_outputs.png) 
+
+## Region-specific forecasts: southern
+
+Figure 9 gives the projected incident infections, population prevalence, non-ICU hospital occupancy, and ICU occupancy through October 1, 2020 in the southern region under the four model scenarios. 
+
+![Figure 9](./plots/region_4_summary_1__4reg.outputs.png)
+
+Figure 10 gives the projected daily reported hosptialized and non-hospitalized deaths through October 1, 2020 in the southern region under the four model scenarios. Regional death data from IDPH are shown as points.
+
+![Figure 10](./plots/region_4_death_summary_outputs.png) 
+
 
 ## File descriptions
 
