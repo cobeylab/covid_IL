@@ -69,6 +69,12 @@ Figure 10 gives the projected daily reported hosptialized and non-hospitalized d
 * `plot_intervention_comparisons.R`: R script to plot simulation output. Called within `simulate_projections.Rmd`
 
 ## Changelog
+### 2020-05-15
+* Added regional projections.
+* Changed post-SIP scenarios. Transmission now increases 10% or 30% of the way back to pre-intervention transmission.
+* Changed date of post-SIP transmission rise from May 29, 2020 to June 1, 2020.
+* Plot projections until October 1, 2020.
+
 ### 2020-05-11
 * Fitted with data through May 8, 2020. 
 * Changed date of transmission increase from May 15 to May 29.
