@@ -59,7 +59,8 @@ We model specific hypothetical scenarios to reflect the relaxing of shelter-in-p
 The model's predictions will shift as new data on COVID-19 emerges from Illinois and around the world.
 We will update the model to incorporate better assumptions about the underlying biology and epidemiology.
 We will also continue to try different modeling approaches with different assumptions to see how they affect conclusions.
-And we will continue to engage with other scientists and modelers, and learn from what they are doing (e.g., via the [MIDAS Network](https://midasnetwork.us/) and the [Mobility Data Network](https://www.covid19mobility.org/)).
+And we will continue to engage with other scientists and modelers, and learn from what they are doing (e.g., via the [MIDAS Network](https://midasnetwork.us/) and the [Mobility Data Network](https://www.covid19mobility.org/)). 
+[This recent perspective](https://www.nejm.org/doi/full/10.1056/NEJMp2016822) highlights important issues to consider when evaluating mathematical models.
 
 Some important assumptions of our model include:
 * Infected individuals who become hospitalized no longer contribute to population transmission. Obviously, if insufficient PPE is available or a hospitalized case is not diagnosed in time, this could be a bad assumption.
@@ -70,15 +71,15 @@ Some important assumptions of our model include:
 
 ### More information
 
-[This recent perspective](https://www.nejm.org/doi/full/10.1056/NEJMp2016822) highlights important issues to consider when evaluating mathematical models [3].
 Full scientific methods (technical documentation) are in preparation.
 Pull requests can be submitted directly.
 Other correspondence should be sent to cobey@uchicago.edu.
 
 ### References
 1. King AA, Nguyen D and Ionides EL (2015) Statistical inference for partially observed Markov processes via the R package pomp. arXiv preprint arXiv:1509.00503.
-2. Cobey, S (2020) Modelling infectious disease dynamics. <i>Science</i> eabb5659
-3. Holmdahl, I. and Buckee, C (2020) Wrong but Useful — What Covid-19 Epidemiologic Models Can and Cannot Tell Us. <i>New England Journal of Medicine. 10.1056/NEJMp2016822
+2. Holmdahl, I. and Buckee, C (2020) Wrong but Useful — What Covid-19 Epidemiologic Models Can and Cannot Tell Us. <i>New England Journal of Medicine. 10.1056/NEJMp2016822
+3. Cobey, S (2020) Modelling infectious disease dynamics. <i>Science</i> eabb5659
+
 
 ### License for forecast data
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a><br />Data in Forecasting/forecast_hub_projections/ are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
