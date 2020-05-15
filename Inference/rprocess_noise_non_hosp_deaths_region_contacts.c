@@ -60,7 +60,7 @@ const double *scale_school_vec = &scale_school_1;
 const double *scale_other_vec = &scale_other_1;
 
 const double *N = &N_1_1;
-//const double *beta2 = &beta2_1;
+const double *beta2 = &beta2_1;
 double *new_mild_infections = &new_mild_infections_1_1;
 double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
@@ -92,14 +92,6 @@ double *IC3 = &IC3_1_1_1;
 // loop over every age group
 for (int region=0; region<n_regions; region +=1)
 {
-    double beta2;
-    if (region == 0){
-      beta2 = beta2_1;
-    } else if (region ==1){
-      beta2 = beta2_2;
-    } else if (region ==2){
-      beta2 = beta2_3;
-    }
     for (int j=0; j<num_age_groups; j += 1){
 
 
@@ -123,7 +115,7 @@ for (int region=0; region<n_regions; region +=1)
          C = C_home[cMatrixOffset]*scale_home + C_work[cMatrixOffset]*scale_work + C_school[cMatrixOffset]*scale_school + C_other[cMatrixOffset]*scale_other;
          
          if(use_post_intervention_beta > 0 ){
-              betaT = beta2;
+              betaT = beta2[region];
           }
           else{
             betaT = beta1;
@@ -135,8 +127,8 @@ for (int region=0; region<n_regions; region +=1)
       // add noise to beta when evaluating increases in post-intervention transmission rate
       if(beta_noise == 1){
           betaT = rnorm(betaT, amp_noise*betaT);
-          if(betaT < beta2){
-            betaT = beta2;
+          if(betaT < beta2[region]){
+            betaT = beta2[region];
           }
       }
       

@@ -243,10 +243,17 @@ simulate_pomp_covid__init_parameters <- function(
     }
     
     # Beta 2's by region
+    if (n_regions == 3){
     params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3)
     
     # Num init by region 
     params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3)
+    } else if(n_regions == 4){
+    params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4)
+    
+    # Num init by region 
+    params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4)      
+    }
     
     # Rates
     params[paste0("eta_",c(1:n_age_groups))] = rep(1/inv_eta, n_age_groups)

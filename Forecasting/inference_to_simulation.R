@@ -16,6 +16,7 @@ row.names(fraction_underreported) = fraction_underreported$time
 # Import contact matrix data
 load(contact_filename)
 
+print('Reading in population files')
 # Make population a vector that has the regions concatenated together
 population1 = read.csv(population_filename_1)
 colnames(population1) <- c("AGE_GROUP_MIN", "POPULATION")
@@ -26,7 +27,8 @@ colnames(population2) <- c("AGE_GROUP_MIN", "POPULATION")
 population3 = read.csv(population_filename_3)
 colnames(population3) <- c("AGE_GROUP_MIN", "POPULATION")
 
-population_list=list(population1, population2, population3)
+population4 = read.csv(population_filename_4)
+colnames(population4) <- c("AGE_GROUP_MIN", "POPULATION")
 
 n_age_groups = nrow(population1)
 
@@ -48,6 +50,24 @@ get_obsprob = function(Time){
   pars$nu_3 * pars$theta_test * (1 - fraction_underreported[as.character(Time), 'frac_underreported'] * runif(length(Time), 0.8, 1))
 }
 
+# ASSUME FOLLOWING ORDER: NORTH-CENTRAL, CENTRAL, NORTHEAST, SOUTHERN 
+if (pars$n_regions == 3){
+    population2$POPULATION = population2$POPULATION + population4$POPULATION
+
+    population_list=list(population1, population2, population3)
+} else if (pars$n_regions == 4){
+
+
+    pop_frac_4 = sum(population4$POPULATION) / (sum(population4$POPULATION) + sum(population2$POPULATION))
+
+    # Add population 2 contacts to end of matrix
+    for (location in c('home', 'school', 'work', 'other')){
+        pomp_contacts[[location]] = c(pomp_contacts[[location]], pomp_contacts[[location]][82:162])
+    }
+    population_list=list(population1, population2, population3, population4)
+}
+
+
 for(i in c(1:length(scales))){
   
   beta_scaling = scales[i]
@@ -65,7 +85,10 @@ for(i in c(1:length(scales))){
   if (beta_scaling == 1.0){
     scenario = 100
   } else{
+    print(paste0('Scaling is ', beta_scaling))
+
     scenario = (1 - (beta_scaling - 1)) * 100
+    print(paste0('Scenario is ', scenario))
   }
   
   cat("running scenario ", scenario, "\n")
@@ -88,11 +111,18 @@ for(i in c(1:length(scales))){
     pars$num_init_1 = r[['num_init_1']]
     pars$num_init_2 = r[['num_init_2']]
     pars$num_init_3 = r[['num_init_3']]
+
+    if (pars$n_regions == 4){
+        pars$beta2_4 = r[['beta2_2']]
+        pars$num_init_4 = round(r[['num_init_2']] * pop_frac_4)
+        pars$num_init_2 = round(r[['num_init_2']] * (1-pop_frac_4))
+    }
+
     n_projections = r[['num_sims']]
     
     sim_full <- simulate_pomp_covid(
         n_age_groups=nrow(population_list[[1]]),
-        n_regions = 3,
+        n_regions = pars$n_regions,
         nsim= n_projections, 
         input_params=pars,
         delta_t=deltaT,

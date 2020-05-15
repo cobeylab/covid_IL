@@ -34,7 +34,7 @@ double *IH4 = &IH4_1_1_1;
 double *IC2 = &IC2_1_1_1;
 double *IC3 = &IC3_1_1_1;
 
-//const double *num_init = &num_init_1;
+const double *num_init = &num_init_1;
 
 int num_init_compartments = 3;
 
@@ -62,15 +62,6 @@ double *new_IH4 = &new_IH4_1_1;
 
 
 for (int region=0; region<n_regions; region += 1 ){
-  double num_init;
-
-  if (region == 0){
-    num_init = num_init_1;
-  } else if (region==1){
-    num_init = num_init_2;
-  } else if (region==2){
-    num_init = num_init_3;
-  }
 
   // initialize multinomial draw to determine age distribution
   int rN[num_age_groups];
@@ -78,7 +69,7 @@ for (int region=0; region<n_regions; region += 1 ){
   for (int ag=0; ag<num_age_groups; ag+=1){
     age_dist_region[ag] = age_dist[ag + region * num_age_groups];
   }
-  rmultinom(ceil(num_init), age_dist_region, num_age_groups, rN);
+  rmultinom(ceil(num_init[region]), age_dist_region, num_age_groups, rN);
 
   for (int i=0; i<num_age_groups; i += 1){
       double new_mild = 0;
