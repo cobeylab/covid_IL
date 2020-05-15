@@ -70,13 +70,15 @@ Some important assumptions of our model include:
 
 ### More information
 
+[This recent perspective](https://www.nejm.org/doi/full/10.1056/NEJMp2016822) highlights important issues to consider when evaluating mathematical models [3].
 Full scientific methods (technical documentation) are in preparation.
 Pull requests can be submitted directly.
 Other correspondence should be sent to cobey@uchicago.edu.
 
-### Reference
+### References
 1. King AA, Nguyen D and Ionides EL (2015) Statistical inference for partially observed Markov processes via the R package pomp. arXiv preprint arXiv:1509.00503.
 2. Cobey, S (2020) Modelling infectious disease dynamics. <i>Science</i> eabb5659
+3. Holmdahl, I. and Buckee, C (2020) Wrong but Useful — What Covid-19 Epidemiologic Models Can and Cannot Tell Us. <i>New England Journal of Medicine. 10.1056/NEJMp2016822
 
 ### License for forecast data
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a><br />Data in Forecasting/forecast_hub_projections/ are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
