@@ -77,7 +77,7 @@ Other correspondence should be sent to cobey@uchicago.edu.
 
 ### References
 1. King AA, Nguyen D and Ionides EL (2015) Statistical inference for partially observed Markov processes via the R package pomp. arXiv preprint arXiv:1509.00503.
-2. Holmdahl, I. and Buckee, C (2020) Wrong but Useful — What Covid-19 Epidemiologic Models Can and Cannot Tell Us. <i>New England Journal of Medicine. 10.1056/NEJMp2016822
+2. Holmdahl, I. and Buckee, C (2020) Wrong but Useful — What Covid-19 Epidemiologic Models Can and Cannot Tell Us. <i>New England Journal of Medicine.</i> 10.1056/NEJMp2016822
 3. Cobey, S (2020) Modelling infectious disease dynamics. <i>Science</i> eabb5659
 
 
