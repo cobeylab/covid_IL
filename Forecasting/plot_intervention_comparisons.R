@@ -282,7 +282,13 @@ return(list(summary = summary_df
 summary_df <- data.frame()
 for( i in c(1:length(intervention_scenarios))){
   intervention = intervention_scenarios[i]
-  input_file = paste0(output_path,sprintf("plotting_output_%s.csv", intervention))
+
+  if(regional_aggregation){
+      input_file = paste0(output_path,sprintf("plotting_output_statewide_%s.csv", intervention))
+  } else{
+      input_file = paste0(output_path,sprintf("plotting_output_%s.csv", intervention))
+  }
+
   print(input_file)
   summary_overall <- get_summary_df(input_filename = input_file, regional_aggregation = regional_aggregation)
   summary_df_sub <- as.data.frame(summary_overall$summary)  %>% mutate(intervention = intervention)
@@ -301,6 +307,16 @@ save(summary_df, file = paste0(output_path,"summary.rda"))
 
 # Make plots -------------------------
 if(regional_aggregation == T){
+
+    
+    hosp_cap = reg_hosp_cap %>% 
+         mutate(date = as.Date(date)) %>% 
+        filter(date == max(date)) %>% 
+        group_by(date) %>%
+        summarize(capacity_non_icu=sum(capacity_non_icu),
+                  capacity_adult_icu=sum(capacity_adult_icu))
+    hospital_capacity = as.numeric(hosp_cap$capacity_non_icu + hosp_cap$capacity_adult_icu)
+    ICU_capacity = as.numeric(hosp_cap$capacity_adult_icu)
 
   pop_total <- sum(population1$POPULATION + population2$POPULATION + population3$POPULATION + population4$POPULATION)
   summary_df_deaths <- summary_df %>% filter(Compartment == "Daily reported deaths")
@@ -324,6 +340,11 @@ if(regional_aggregation == T){
     filter(intervention == "Baseline")
   df_deaths_new <- rbind(df_deaths_pre, df_deaths_post)
   
+    df_sum_new$capacity=NA
+    df_sum_new[df_sum_new$Compartment == "Total hospital beds occupied",]$capacity = hospital_capacity
+    df_sum_new[df_sum_new$Compartment == "Total ICU beds occupied",]$capacity = ICU_capacity
+    print('madeit')
+
   limits = df_sum_new %>% group_by(Compartment) %>% summarize(ma = max(UCI, capacity, na.rm=TRUE), mi = min(LCI))
   midpoints = (limits$ma - limits$mi)/2
   
@@ -357,9 +378,7 @@ if(regional_aggregation == T){
                            label = "forecast start",
                            x = today - 3,
                            y = death_mid)  
-  df_sum_new$capacity = NA
-  df_sum_new[df_sum_new$Compartment == "Total hospital beds occupied",]$capacity = hospital_capacity
-  df_sum_new[df_sum_new$Compartment == "Total ICU beds occupied",]$capacity = ICU_capacity
+
   p_summary_1 <- ggplot(df_sum_new,aes(x = Date, y= median)) + 
     geom_line(aes(color = intervention), linetype = 2) + 
     geom_ribbon(aes(ymin = LCI, ymax = UCI, color = intervention, fill = intervention), alpha  = 0.2) + 
@@ -455,7 +474,8 @@ if(regional_aggregation == T){
   death_data <- read.csv(IDPH_death_data_filename) %>% mutate(Date = as.Date(date)) %>% 
     select(Date, new_deaths) %>% 
     mutate(Compartment = "Daily reported deaths",
-           intervention = "Reported deaths, IDPH")
+           intervention = "Reported deaths, IDPH") %>%
+      filter(Date <= today)
   
   p_deaths <- ggplot(df_deaths_new %>% mutate(Compartment = "Daily reported deaths"), aes(x = Date, y = median)) + geom_line(aes(color = intervention), linetype = 2) + 
     geom_ribbon(aes(ymin = LCI, ymax = UCI, color = intervention, fill = intervention), alpha  = 0.2) + 
@@ -507,12 +527,12 @@ if(regional_aggregation == T){
 
 if(regional_aggregation == F){
     
-    all_death_data <- read.csv('../Data/incident_idph_regions.csv') %>% 
+    all_death_data <- read.csv(regional_idph_file) %>% 
         mutate(Date = as.Date(test_date)) %>% 
         select(Date, inc_deaths, region) %>% 
         mutate(Compartment = "Daily reported deaths",
                intervention = "Reported deaths, IDPH") %>%
-        filter(inc_deaths >= 0)
+        filter(inc_deaths >= 0, Date <= today)
     
     
   regions = unique(summary_df$Region)
@@ -532,7 +552,7 @@ if(regional_aggregation == F){
     df_sum[df_sum$Compartment %in% c("Susceptibles","Prevalence"),]$UCI <- df_sum[df_sum$Compartment %in% c("Susceptibles","Prevalence"),]$UCI/pop_total
     
     
-    hosp_cap = reg_hosp_cap %>% filter(idph_cluster == region_name) %>% mutate(date = as.Date(date)) %>% filter(date == today)
+    hosp_cap = reg_hosp_cap %>% filter(idph_cluster == region_name) %>% mutate(date = as.Date(date)) %>% filter(date == max(date))
     
     df_sum_post <- df_sum %>% filter(Date >= today)
     df_sum_pre <- df_sum %>% filter(Date < today) %>% 

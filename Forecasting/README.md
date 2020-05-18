@@ -69,6 +69,11 @@ Figure 10 gives the projected daily reported hosptialized and non-hospitalized d
 * `plot_intervention_comparisons.R`: R script to plot simulation output. Called within `simulate_projections.Rmd`
 
 ## Changelog
+### 2020-05-18
+* Fitted to 4 regions instead of 3.
+* Added datastream to fit: non-hospitalized deaths through 2020-04-26.
+* Incorporated uncertainty in the fraction of total deaths that are non-hospitalized. 
+
 ### 2020-05-15
 * Added regional projections.
 * Changed post-SIP scenarios. Transmission now increases 10% or 30% of the way back to pre-intervention transmission.
