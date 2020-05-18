@@ -23,11 +23,10 @@ Probabilities determine the fraction of people following specific paths between 
 The model is stochastic, in that in each time step, the number of individuals transitioning between compartments is drawn randomly based on these rate and probability parameters.
 
 ### Data
-The model is fitted to deaths reported by the New York Times from March 15 to March 24, in-hospital deaths reported by the Illinois Department of Public Health (IDPH) after March 24, and confirmed cases in the ICU from April 7 onward reported by IDPH.
+The model is fitted to in-hospital deaths reported by the Illinois Department of Public Health (IDPH) after March 15, out-of-hospital deaths reported by IDPH between March 15 and April 26, and confirmed cases in the ICU reported by IDPH from April 7 onward.
 Deaths before March 15 and ICU cases before April 7 are excluded due to concerns about excessive underreporting.
-The New York Times data draw from publicly available data shared by IDPH.
-The data we received from IDPH track in-hospital deaths precisely from March 24 onward and confirmed cases in the ICU from April 7 onward.
-To better approximate dynamics for the entire state, epidemic dynamics are estimated separately for three geographic subregions distinguished by the similarity of their epidemic activity to date ([Data](./Data)).
+The data we received from IDPH track in-hospital deaths precisely from March 16 onward and confirmed cases in the ICU from April 7 onward.
+To better approximate dynamics for the entire state, epidemic dynamics are estimated separately for four geographic subregions used by the [Restore Illinois plan](https://dph.illinois.gov/restore) ([Data](./Data)).
 
 ### Observation model
 Limited testing capacity and false negatives mean that not all deaths and ICU admissions from COVID-19 infection are observed.
@@ -35,7 +34,7 @@ Although the model tracks all underlying infections and deaths, it assumes only 
 
 ### Inference
 For each region in Illinois, we infer the transmission rate of SARS-CoV-2 before and during shelter-in-place.
-The model also estimates the number of individuals infected on March 1, the start of the simulation.
+The model also estimates the reporting rate for out-of-hospital deaths and the number of individuals infected on March 1, the start of the simulation.
 Other parameters are fixed based on values from the literature ([Parameters](./Parameters)).
 The model is fitted to the data using sequential Monte Carlo, a particle filter ([Inference](./Inference)).
 
