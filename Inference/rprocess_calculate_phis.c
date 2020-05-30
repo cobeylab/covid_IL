@@ -61,6 +61,7 @@ const double *scale_beta = &scale_beta_1;
 
 const double *N = &N_1_1;
 const double *beta2 = &beta2_1;
+const double *beta1 = &beta1_1;
 double *new_mild_infections = &new_mild_infections_1_1;
 double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
@@ -89,9 +90,17 @@ double *IC2 = &IC2_1_1_1;
 double *IC3 = &IC3_1_1_1;
 
 
-// loop over every age group
-for (int region=0; region<n_regions; region +=1)
-{
+// Code to have the option of looking at a single region
+int start_loop;
+int end_loop;
+if (region_to_test < 0){
+  start_loop = 0;
+  end_loop = n_regions;
+} else{
+  start_loop = region_to_test - 1;
+  end_loop = region_to_test;
+}
+for (int region=start_loop; region<end_loop; region += 1){
     double frac_of_deaths_non_hospitalized = region_non_hosp[region];
     for (int j=0; j<num_age_groups; j += 1){
 
@@ -99,7 +108,7 @@ for (int region=0; region<n_regions; region +=1)
 
       // calculate lambda
       double lambda = 0;
-      double betaT = beta1;
+      double betaT = beta1[region];
 
       // Get the starting index (i.e., if you are on age group 2, you want to go to column 2 of the matrix)
       int cMatrixColStartIndex = j * num_age_groups + num_age_groups*num_age_groups*region;
@@ -120,7 +129,7 @@ for (int region=0; region<n_regions; region +=1)
               betaT = beta2[region];
           }
           else{
-            betaT = beta1;
+            betaT = beta1[region];
           }
       
     
@@ -171,6 +180,10 @@ for (int region=0; region<n_regions; region +=1)
       double dS = rbinom(S[S_index], 1-exp(-lambda * dt));
       S[S_index] += -dS;
       
+      if(ISNA(S[S_index])){
+        Rprintf("Region %d, S=%f, t=%f", region, S[S_index], t);
+      }
+
       // Outflows from E
       int EStart = j * alpha_E_int + region * alpha_E_int * num_age_groups;
       double dE[alpha_E_int];
@@ -352,4 +365,6 @@ for (int region=0; region<n_regions; region +=1)
       new_IC3[j + (region * num_age_groups)] += dIH3[alpha_IH3_int - 1];
       new_IH4[j + (region * num_age_groups)] += S_to_hosp_death;
     }
-}
+  }
+
+
