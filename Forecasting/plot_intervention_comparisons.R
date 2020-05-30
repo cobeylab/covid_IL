@@ -326,8 +326,8 @@ if(regional_aggregation == T){
   df_sum[df_sum$Compartment %in% c("Susceptibles","Prevalence"),]$UCI <- df_sum[df_sum$Compartment %in% c("Susceptibles","Prevalence"),]$UCI/pop_total
   
   
-  df_sum_post <- df_sum %>% filter(Date >= today)
-  df_sum_pre <- df_sum %>% filter(Date < today) %>% 
+  df_sum_post <- df_sum %>% filter(Date >= intervention_lift_date) #today)
+  df_sum_pre <- df_sum %>% filter(Date < intervention_lift_date) %>% #today) %>% 
     filter(intervention == "Baseline")
   df_sum_new <- rbind(df_sum_pre, df_sum_post) %>% filter(Compartment %in% c("New observed and unobserved infections", 
                                                                              "Prevalence", 
@@ -335,8 +335,8 @@ if(regional_aggregation == T){
                                                                              "Total ICU beds occupied"))
   
   
-  df_deaths_post <- summary_df_deaths %>% filter(Date >= today)
-  df_deaths_pre <- summary_df_deaths %>% filter(Date < today) %>% 
+  df_deaths_post <- summary_df_deaths %>% filter(Date >= intervention_lift_date)
+  df_deaths_pre <- summary_df_deaths %>% filter(Date < intervention_lift_date) %>% 
     filter(intervention == "Baseline")
   df_deaths_new <- rbind(df_deaths_pre, df_deaths_post)
   
@@ -371,12 +371,12 @@ if(regional_aggregation == T){
   
   ann_text_deaths_lift <- data.frame(Compartment = "Daily reported deaths",
                            label = "relax SIP",
-                           x = intervention_lift_date - 3,
-                           y = death_mid)
+                           x = intervention_lift_date - 5,
+                           y = death_mid + 20)
 
   ann_text_deaths_forecast <- data.frame(Compartment = "Daily reported deaths",
                            label = "forecast start",
-                           x = today - 3,
+                           x = today - 5,
                            y = death_mid)  
 
   p_summary_1 <- ggplot(df_sum_new,aes(x = Date, y= median)) + 
@@ -477,10 +477,18 @@ if(regional_aggregation == T){
            intervention = "Reported deaths, IDPH") %>%
       filter(Date <= today)
   
+ # death_data <- read.csv('civis_data/total_deaths.csv') %>% mutate(Date = as.Date(date)) %>% 
+ #     group_by(Date) %>%
+ #     summarize(new_deaths = sum(new_deaths)) %>%
+ #     ungroup() %>%
+ #     mutate(Compartment = "Daily reported deaths",
+ #            intervention = "Reported deaths, IDPH") %>%
+ #     filter(Date <= today)
+  
   p_deaths <- ggplot(df_deaths_new %>% mutate(Compartment = "Daily reported deaths"), aes(x = Date, y = median)) + geom_line(aes(color = intervention), linetype = 2) + 
     geom_ribbon(aes(ymin = LCI, ymax = UCI, color = intervention, fill = intervention), alpha  = 0.2) + 
     geom_point(data = death_data, aes(x = Date, y = new_deaths)) + 
-    facet_wrap(~Compartment, scales = "free_y") + 
+    #facet_wrap(~Compartment, scales = "free_y") + 
     ylab("") + 
     #ylab("Prevalent observed and unobserved infections") + 
     theme_classic() +
@@ -493,11 +501,12 @@ if(regional_aggregation == T){
     geom_text(data = ann_text_deaths_lift,
                 mapping = aes(x = x, y = y, label = label),
                 angle=90) +
-    geom_text(data = ann_text_deaths_forecast,
-                mapping = aes(x = x, y = y, label = label),
-                angle=90) +
-    geom_vline(xintercept=today) +
-    geom_vline(xintercept=intervention_lift_date)
+    #geom_text(data = ann_text_deaths_forecast,
+    #            mapping = aes(x = x, y = y, label = label),
+    #            angle=90) +
+    #geom_vline(xintercept=today) +
+    geom_vline(xintercept=intervention_lift_date) +
+    ylab('Daily reported deaths')
 
   
   
@@ -516,7 +525,7 @@ if(regional_aggregation == T){
     )
   
   
-  p_output_deaths <- plot_grid(title2, 
+  p_output_deaths <- plot_grid(#title2, 
                               p_deaths,
                               ncol = 1,
                               rel_heights = c(0.1,1))
@@ -564,8 +573,8 @@ if(regional_aggregation == F){
     
 
     
-    df_deaths_post <- summary_df_deaths %>% filter(Date >= today)
-    df_deaths_pre <- summary_df_deaths %>% filter(Date < today) %>% 
+    df_deaths_post <- summary_df_deaths %>% filter(Date >= intervention_lift_date)
+    df_deaths_pre <- summary_df_deaths %>% filter(Date < intervention_lift_date) %>% 
       filter(intervention == "Baseline")
     df_deaths_new <- rbind(df_deaths_pre, df_deaths_post)
     

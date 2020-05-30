@@ -3,9 +3,6 @@
 int num_age_groups = n_age_groups;
 //int dim_contact_matrix = n_age_groups*n_age_groups;
 
-// Number of interventions
-int num_interventions = n_interventions;
-
 // Number of sub-compartments per state 
 int alpha_E_int = alpha_E;
 int alpha_A_int =  alpha_A;
@@ -28,7 +25,7 @@ const double amp_noise = beta_noise_amplitude;
 const double *rho = &rho_1;
 const double *eta = &eta_1;
 const double *kappa = &kappa_1;
-
+const double *region_non_hosp = &region_non_hosp_1;
 const double *zeta_s = &zeta_s_1;
 const double *zeta_h = &zeta_h_1;
 const double *zeta_c = &zeta_c_1;
@@ -36,6 +33,7 @@ const double *zeta_c = &zeta_c_1;
 const double *psi1 = &psi1_1;
 const double *psi2 = &psi2_1;
 const double *psi3 = &psi3_1;
+const double *psi4 = &psi4_1;
 
 const double *gamma_m = &gamma_m_1;
 const double *gamma_h = &gamma_h_1;
@@ -44,6 +42,8 @@ const double *gamma_c = &gamma_c_1;
 const double *mu_c = &mu_c_1;
 const double *mu_h = &mu_h_1;
 const double *mu_m = &mu_m_1;
+
+const double *q = &q_1;
 
 // initialize contact matrix pointer for each type of contact, starts at the contact entry for 1, 1. Assumes that the contact rates are all in one continuous block of memory
 const double *C_home = &C_home_1_1_1;    
@@ -56,6 +56,8 @@ const double *scale_home_vec = &scale_home_1;
 const double *scale_work_vec = &scale_work_1;
 const double *scale_school_vec = &scale_school_1;
 const double *scale_other_vec = &scale_other_1;
+
+const double *scale_beta = &scale_beta_1;
 
 const double *N = &N_1_1;
 const double *beta2 = &beta2_1;
@@ -90,10 +92,11 @@ double *IC3 = &IC3_1_1_1;
 // loop over every age group
 for (int region=0; region<n_regions; region +=1)
 {
-
+    double frac_of_deaths_non_hospitalized = region_non_hosp[region];
     for (int j=0; j<num_age_groups; j += 1){
 
-      double frac_of_deaths_non_hospitalized = runif(0.2, 0.3); // fraction of deaths that are non-hospitalized, draw it separately for every age group at every timestep
+      // double frac_of_deaths_non_hospitalized = runif(0.2, 0.4); // fraction of deaths that are non-hospitalized, draw it separately for every age group at every timestep
+
       // calculate lambda
       double lambda = 0;
       double betaT = beta1;
@@ -121,7 +124,7 @@ for (int region=0; region<n_regions; region +=1)
           }
       
     
-      betaT = betaT*scale_beta;
+      betaT = betaT*scale_beta[region];
       
       // add noise to beta when evaluating increases in post-intervention transmission rate
       if(beta_noise == 1){
@@ -160,7 +163,7 @@ for (int region=0; region<n_regions; region +=1)
           infectious_severe += IS[offset];
         }
 
-        lambda += C / N[i + (region * num_age_groups)] * betaT * (presymptomatic + asymptomatic + infectious_mild + infectious_severe);
+        lambda += C / N[i + (region * num_age_groups)] * betaT * q[j] *(presymptomatic + asymptomatic + infectious_mild + infectious_severe);
       }
       
       int S_index = j + (region * num_age_groups);
@@ -254,13 +257,13 @@ for (int region=0; region<n_regions; region +=1)
       }
       // Split last outflow of IS into: deaths, ICU and recover, and recover
       int Hosp_Split[4];
-      double hosp_dist[4] = {psi1[j], psi2[j], psi3[j], 1-psi1[j]-psi2[j]-psi3[j]};
+      double hosp_dist[4] = {psi1[j], psi2[j], psi3[j], psi4[j]};
       rmultinom(dIS[alpha_IS_int-1], hosp_dist, 4, Hosp_Split);
       double S_to_recover = Hosp_Split[0];
       double S_to_ICU_recover = Hosp_Split[1];
       double S_to_ICU_death = Hosp_Split[2];
       double S_to_hosp_death = Hosp_Split[3]; 
-      
+      //Rprintf("%f, %f, %f, %f\n", psi1[j], psi2[j], psi3[j], 1-psi1[j]-psi2[j]-psi3[j]);
       // Hospitalized -> recover
       // Outflows from IH1
       int IH1_Start = j * alpha_IH1_int + region * alpha_IH1_int * num_age_groups;

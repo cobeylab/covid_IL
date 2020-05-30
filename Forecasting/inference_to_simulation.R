@@ -4,6 +4,7 @@ source('simulation_statewide.R')
 
 rprocess_Csnippet <- read_Csnippet(rprocFile)
 rinit_Csnippet <- read_Csnippet(initFile)
+rmeasure_Csnippet <- read_Csnippet(rmeasFile)
 
 # import scaling for nu
 nu_scales = read.csv(nu_scales_file)
@@ -12,7 +13,6 @@ row.names(nu_scales) = nu_scales$time
 
 # import fraction underreported covariate
 fraction_underreported = read.csv(fraction_underreported_file)
-names(fraction_underreported) = c('time', 'frac_underreported')
 row.names(fraction_underreported) = fraction_underreported$time
 
 # Import contact matrix data
@@ -61,26 +61,19 @@ if (pars$n_regions == 3){
 
 for(i in c(1:length(scales))){
   
-  beta_scaling = scales[i]
+  beta_scaling = as.numeric(scales[[i]])
   
   # Generate scaling for beta
   beta_scales <- get_scale(t_logistic_start = as.numeric(today - reference_date),
                            intervention_lift = as.numeric(intervention_lift_date - reference_date),
                            simstart =  as.numeric(start_projection_date - reference_date),
                            simend = as.numeric(end_projection_date - reference_date),
-                           max_scale = beta_scaling
+                           max_scales = beta_scaling
                            )
   
   
   # Define scenario based on beta scale
-  if (beta_scaling == 1.0){
-    scenario = 100
-  } else{
-    print(paste0('Scaling is ', beta_scaling))
-
-    scenario = (1 - (beta_scaling - 1)) * 100
-    print(paste0('Scenario is ', scenario))
-  }
+  scenario = scenarios[i]
   
   cat("running scenario ", scenario, "\n")
   temp_scales = beta_scales
@@ -102,13 +95,13 @@ for(i in c(1:length(scales))){
     pars$num_init_1 = r[['num_init_1']]
     pars$num_init_2 = r[['num_init_2']]
     pars$num_init_3 = r[['num_init_3']]
-    pars$nu_m = r[['nu_m']]
+    pars$region_non_hosp_1 = r[['region_non_hosp_1']]
+    pars$region_non_hosp_2 = r[['region_non_hosp_2']]
+    pars$region_non_hosp_3 = r[['region_non_hosp_3']]
+    pars$region_non_hosp_4 = r[['region_non_hosp_4']]
+    pars$beta2_4 = r[['beta2_4']]
+    pars$num_init_4 = r[['num_init_4']]
 
-
-    if (pars$n_regions == 4){
-        pars$beta2_4 = r[['beta2_4']]
-        pars$num_init_4 = r[['num_init_4']]
-    }
 
     n_projections = r[['num_sims']]
     print(deltaT)
@@ -125,20 +118,10 @@ for(i in c(1:length(scales))){
         frac_underreported = fraction_underreported,
         rprocess_Csnippet = rprocess_Csnippet,
         initialize = T,
-        rinit_Csnippet = rinit_Csnippet
+        rinit_Csnippet = rinit_Csnippet,
+        rmeasure_Csnippet=rmeasure_Csnippet,
+        obsnames=c(paste0('ObsHospDeaths_', 1:4), paste0('ObsNonHospDeaths_', 1:4), paste0('ObsICU_', 1:4)) 
         ) 
-
-    get_obsprob = function(Time){
-      pars$nu_3 * pars$theta_test * (1 - fraction_underreported[as.character(Time), 'frac_underreported'] * runif(length(Time), 0.8, 1))
-    }
-
-    get_obsprob_nonhosp = function(Time){
-        get_fracunder = function(x) {fraction_underreported[as.character(x), 'frac_underreported']}
-        get_nu = function(x){nu_scales[as.character(x), 'nu_scale']}
-        underreporting = case_when((Time < 75) ~ as.numeric(1 - get_fracunder(Time)),
-                                   (Time >= 75) ~ as.numeric(get_nu(Time)))
-        pars$theta_test * pars$nu_m * underreporting
-    }
 
     ## Generate the direct simulation output
     sim_full %>% process_pomp_covid_output(agg_regions = regional_aggregation)  -> simout
@@ -155,21 +138,12 @@ for(i in c(1:length(scales))){
     sims_total = bind_rows(sims_total, statewide)
 
     print(head(sims_total))
-    print('imposing observation model')
-    # Impose observation model on hospitalized deaths
-    hd = sims_total %>% filter(Compartment == 'nHD') %>%
-      mutate(Cases = rbetabinom(length(Time), Cases, get_obsprob(Time), pars$dispersion))
 
-    # Impose observation model on non-hospitalized deaths
-    nh = sims_total %>% filter(Compartment %in% c('nD', 'nHD')) %>%
-        spread(Compartment, Cases)  %>%
-        mutate(nDnH = nD - nHD) %>% 
-        select(-nD, -nHD) %>%
-        gather(Compartment, Cases, 'nDnH') %>%
-        mutate(Cases = rbetabinom(length(Time), Cases, get_obsprob_nonhosp(Time), pars$dispersion))
-
-    print('Cumulative deaths')
+    #print('Cumulative deaths')
     # Calculate cumulative deaths
+    nh = sims_total %>% filter(Compartment=='Reported nhd')
+    hd = sims_total %>% filter(Compartment=='Reported hd')
+    
     cumulative_nh = nh %>% 
       group_by(SimID, Region) %>%
       arrange(Time) %>%
@@ -185,7 +159,7 @@ for(i in c(1:length(scales))){
 
     # For forecast hub
       new_deaths <- bind_rows(hd, nh) %>%
-        filter(Compartment %in% c('nHD', 'nDnH'), Region!="0") %>%
+        filter(Compartment %in% c('Reported hd', 'Reported nhd'), Region!="0") %>%
         group_by(SimID, Time) %>%
         summarize(Cases=sum(Cases)) %>%
         mutate(Compartment='nD') %>%
@@ -201,9 +175,6 @@ for(i in c(1:length(scales))){
     sims = as.data.frame(sims)
     final <- rbind(final, sims)
   
-    sims_total <- rbind(sims_total,
-                        hd %>% mutate(Compartment = "Reported hd"),
-                        nh %>% mutate(Compartment = "Reported nhd"))
 
     sims_total$parset = jobid
     sims_total = as.data.frame(sims_total)
@@ -212,11 +183,11 @@ for(i in c(1:length(scales))){
   
   
   ## Output files for forecasting hub
-  final = final %>% filter(Time <= as.numeric(end_forecast_hub_date - reference_date))
-  format_for_covid_hub(final) -> projection_daily
-  format_for_covid_hub_week(final) -> projection_weekly
-  bind_rows(projection_daily, projection_weekly) -> final_projection
-  write.csv(final_projection, paste0(output_path, sprintf("%s-UChicago-CovidIL_%s.csv", today, scenario)))
+  #final = final %>% filter(Time <= as.numeric(end_forecast_hub_date - reference_date))
+  #format_for_covid_hub(final) -> projection_daily
+  #format_for_covid_hub_week(final) -> projection_weekly
+  #bind_rows(projection_daily, projection_weekly) -> final_projection
+  #write.csv(final_projection, paste0(output_path, sprintf("%s-UChicago-CovidIL_%s.csv", today, scenario)))
 
   ## Output files for plotting
   sims_total_combined$Date = reference_date + sims_total_combined$Time

@@ -1,9 +1,10 @@
 ## Specify model input files
 initFile = '../Inference/initializer_non_hosp_deaths.c'
 rprocFile = '../Inference/rprocess_calculate_phis.c'
+rmeasFile = '../Inference/rmeasure_hosp_non_hosp_ICU.c'
 nu_scales_file = '../Data/nu_scaling.csv'
 fraction_underreported_file = "../Data/frac_underreported.csv"  
-default_par_file = "../Parameters/parameter_values_4reg.csv"
+default_par_file = "./evaluate_model_changes/default_parameter_values_scenario6.csv"
 contact_filename = '../Data/IL_4metaregions_symmetric.RData'
 intervention_table_filename = "./intervention_table.csv"
 

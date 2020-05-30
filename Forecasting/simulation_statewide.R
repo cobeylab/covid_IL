@@ -29,7 +29,6 @@ simulate_pomp_covid <- function(
   intervention_df <- simulate_pomp_covid__init_intervention_df(input_params)
   n_interventions <- nrow(intervention_df)
 
-  print(tail(intervention_df))
   # Set up parameters for pomp
   params <- simulate_pomp_covid__init_parameters(
     n_age_groups, n_interventions, input_params, contacts, population_list
@@ -46,7 +45,6 @@ simulate_pomp_covid <- function(
     times = "time"
   )
 
-  print(head(covar_table_interventions))
   # Actually call pomp
   state_names <- simulate_pomp_covid__init_state_names(n_age_groups, n_regions, subcompartment_df)
   
@@ -250,7 +248,7 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3)
     } else if(n_regions == 4){
     params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4)
-    
+    params[paste0("region_non_hosp_", 1:n_regions)] = c(region_non_hosp_1, region_non_hosp_2, region_non_hosp_3, region_non_hosp_4)
     # Num init by region 
     params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4)      
     }
@@ -285,6 +283,12 @@ simulate_pomp_covid__init_parameters <- function(
     )
     params[paste0("psi3_",c(1:n_age_groups))] = unlist(
       input_params[paste0('psi3_', c(1:n_age_groups))]
+    )
+    params[paste0("psi4_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('psi4_', c(1:n_age_groups))]
+    )
+    params[paste0("q_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('q_', c(1:n_age_groups))]
     )
 
   for(k in c(1:n_regions)){
@@ -390,12 +394,17 @@ simulate_pomp_covid__init_covariate_table <- function(input_params, intervention
   
   covar_table_interventions$nu_scale = nu_scales[covar_table_interventions$time, 'nu_scale']
   
-  covar_table_interventions$scale_beta = beta_scales[covar_table_interventions$time, 'scale_beta']
-  
   covar_table_interventions$add_noise_to_beta = beta_scales[covar_table_interventions$time, 'add_noise_to_beta']
   
-  covar_table_interventions$frac_underreported = frac_underreported[covar_table_interventions$time, 'frac_underreported']
+  for (region in 1:input_params$n_regions){
+      col = paste0('frac_underreported_',region)
+      covar_table_interventions[[col]] = frac_underreported[covar_table_interventions$time, col]
+  }
 
+  for (region in 1:input_params$n_regions){
+      col = paste0('scale_beta_',region)
+      covar_table_interventions[[col]] = beta_scales[covar_table_interventions$time, col]
+  }
   covar_table_interventions
 }
 
@@ -442,7 +451,10 @@ process_pomp_covid_output <- function(sim_result, agg_regions=T) {
       startsWith(as.character(Compartment), "new_deaths") ~ "nD",
       startsWith(as.character(Compartment), "new_hosp_deaths") ~ "nHD",
       startsWith(as.character(Compartment), "new_mild") ~ "nM",
-      startsWith(as.character(Compartment), "new_symptomatic") ~ "nS"
+      startsWith(as.character(Compartment), "new_symptomatic") ~ "nS",
+      startsWith(as.character(Compartment), "ObsHospDeaths") ~ "Reported hd",
+      startsWith(as.character(Compartment), "ObsNonHospDeaths") ~ "Reported nhd",
+      startsWith(as.character(Compartment), "ObsICU") ~ "ObsICU"
   )
   ) -> df_sim_output
 
@@ -648,18 +660,28 @@ get_scale = function(t_logistic_start,
                      intervention_lift,
                      simstart,
                      simend,
-                     max_scale){
+                     max_scales){
     
     times = seq(1, simend, 1)
     
-    logistic = function(x, mscale=max_scale, shift=intervention_lift){
+    logistic = function(x, mscale, shift=intervention_lift){
         mean = (mscale-1)/(1+exp(-(x - shift))) + 1
         mean
     }
 
-    raw_scales = data.frame(time=times, scale_beta=logistic(times)) %>%
-        mutate(scale_beta = case_when((time < t_logistic_start) ~1,
-                                 (time>=t_logistic_start) ~scale_beta),
+    raw_scales = data.frame(time=times, 
+                            scale_beta_1=logistic(times, mscale=max_scales[1]),
+                            scale_beta_2=logistic(times, mscale=max_scales[2]),
+                            scale_beta_3=logistic(times, mscale=max_scales[3]),
+                            scale_beta_4=logistic(times, mscale=max_scales[4])) %>%
+        mutate(scale_beta_1 = case_when((time < t_logistic_start) ~1,
+                                 (time>=t_logistic_start) ~scale_beta_1),
+                scale_beta_2 = case_when((time < t_logistic_start) ~1,
+                                                 (time>=t_logistic_start) ~scale_beta_2),
+                scale_beta_3 = case_when((time < t_logistic_start) ~1,
+                                                 (time>=t_logistic_start) ~scale_beta_3),
+                scale_beta_4 = case_when((time < t_logistic_start) ~1,
+                                                 (time>=t_logistic_start) ~scale_beta_4),
                add_noise_to_beta = case_when((time < t_logistic_start) ~ 0,
                                              (time >= t_logistic_start) ~ 1))
     
@@ -674,7 +696,6 @@ add_interventions = function(intervention_file, parameters){
 
   # Add the intervention starts and ends
   interventions = read.csv(intervention_file) %>% arrange(t_start, region)
-  print(interventions)
   pars$t_start = unique(interventions$t_start)
   pars$t_end = unique(interventions$t_end)
   

@@ -38,12 +38,13 @@ source("input_file_specification.R") # script to read in necessary files
 # Projection specifications: all projections
 reference_date <- as.Date("2020-01-14") # All numeric times in reference to this date 
 end_projection_date <- as.Date("2020-10-01")
-end_forecast_hub_date <- as.Date("2020-06-20")
+end_forecast_hub_date <- as.Date("2020-06-27")
 start_projection_date <- as.Date("2020-03-01")
 deltaT = 0.1 # timestep for projections 
 
 # Specify scenarios regarding relaxation of interventions 
-scales = c(1, 1.245, 1.755) # Scenarios for scaling of post-intervention beta
+scenarios=c(100, 10, 30)
+scales = list(c(1, 1, 1, 1), c(1.18, 1.26, 1.22, 1.28), c(1.54, 1.78, 1.66, 1.84)) # Scenarios for scaling of post-intervention beta
 beta_noise_amplitude = 0.05 # amplitude for noise when scaling post-intervention beta 
 intervention_lift_date <- as.Date("2020-06-01") # this is the date at which any relaxation of intervention begins
 today = as.Date(Sys.Date()) # define today for adding noise to forward post-intervention transmission 
@@ -55,7 +56,7 @@ regional_aggregation = F # If true, do statewide estimates
 Next, generate the simulation results as a .csv file
 ```{r}
 # Output filepath 
-output_path = "./forecast_20200518/"
+output_path = "./"
 
 # Run the simulation
 source("inference_to_simulation.R")
@@ -65,17 +66,15 @@ source("inference_to_simulation.R")
 Now, make the relevant plots: statewide
 ```{r}
 regional_aggregation = T
-output_path = "./forecast_20200518/" # where to access the result files 
+output_path = "./forecast_20200425/" # where to access the result files 
 plot_filename <- "4reg.outputs.png"
 reg_hosp_cap = read.csv('idph_cluster_capacities.csv')
 intervention_scenarios <- c("100", "10", "30")
-state_hospital_capacity = 33742 # Total hospital beds in state
-state_ICU_capacity = 3903
-this_date <- "May 15, 2020" # Specify the last date of data used for inference
+this_date <- "May 22, 2020" # Specify the last date of data used for inference
 source("plot_intervention_comparisons.R")
 
-regional_aggregation = F
-source("plot_intervention_comparisons.R")
+#regional_aggregation = F
+#source("plot_intervention_comparisons.R")
 
 ```
 

@@ -51,11 +51,12 @@ const double *phi = &phi_1;
 double *new_mild_infections = &new_mild_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
 double *new_hosp_deaths = &new_hosp_deaths_1_1;
+double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
 double *new_IH1 = &new_IH1_1_1;
 double *new_IC2 = &new_IC2_1_1;
 double *new_IC3 = &new_IC3_1_1;
 double *new_IH4 = &new_IH4_1_1;
-
+double *Inc = &Inc_1_1;
 
 // Right now just initialized at whatever values you want.
 // Initial conditions (e.g. S0) are vectorized parameters.
@@ -182,6 +183,8 @@ for (int region=0; region<n_regions; region += 1 ){
       new_mild_infections[i + region * num_age_groups] = new_mild;
       new_deaths[i + region * num_age_groups] = 0;
       new_hosp_deaths[i + region * num_age_groups] = 0;
+      new_symptomatic_infections[i + region * num_age_groups] = new_mild + new_IS;
+      Inc[i + region * num_age_groups] = new_mild + new_asymp + new_IS;
       new_IH1[i + region * num_age_groups] = 0;
       new_IC2[i + region * num_age_groups] = 0;
       new_IC3[i + region * num_age_groups] = 0;
