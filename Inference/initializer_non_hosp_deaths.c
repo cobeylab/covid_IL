@@ -61,8 +61,18 @@ double *Inc = &Inc_1_1;
 // Right now just initialized at whatever values you want.
 // Initial conditions (e.g. S0) are vectorized parameters.
 
+// Code to have the option of looking at a single region
+int start_loop;
+int end_loop;
+if (region_to_test < 0){
+  start_loop = 0;
+  end_loop = n_regions;
+} else{
+  start_loop = region_to_test - 1;
+  end_loop = region_to_test;
+}
 
-for (int region=0; region<n_regions; region += 1 ){
+for (int region=start_loop; region<end_loop; region += 1 ){
 
   // initialize multinomial draw to determine age distribution
   int rN[num_age_groups];
