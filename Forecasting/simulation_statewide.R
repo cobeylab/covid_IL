@@ -205,6 +205,7 @@ simulate_pomp_covid__init_parameters <- function(
     params = c(
       "n_age_groups" = n_age_groups,
       "n_regions" = n_regions,
+      "region_to_test" = region_to_test,
       "n_interventions" = n_interventions,
       "inference" = inference,
       "simulation" = simulation,
@@ -242,15 +243,17 @@ simulate_pomp_covid__init_parameters <- function(
     
     # Beta 2's by region
     if (n_regions == 3){
-    params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3)
+      params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3)
+      params[paste0("beta1_",c(1:n_regions))] = c(beta1_1, beta1_2, beta1_3)
     
-    # Num init by region 
-    params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3)
+      # Num init by region 
+      params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3)
     } else if(n_regions == 4){
-    params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4)
-    params[paste0("region_non_hosp_", 1:n_regions)] = c(region_non_hosp_1, region_non_hosp_2, region_non_hosp_3, region_non_hosp_4)
-    # Num init by region 
-    params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4)      
+      params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4)
+      params[paste0("beta1_",c(1:n_regions))] = c(beta1_1, beta1_2, beta1_3, beta1_4)
+      params[paste0("region_non_hosp_", 1:n_regions)] = c(region_non_hosp_1, region_non_hosp_2, region_non_hosp_3, region_non_hosp_4)
+      # Num init by region 
+      params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4)      
     }
     
     # Rates
@@ -390,7 +393,7 @@ simulate_pomp_covid__init_covariate_table <- function(input_params, intervention
         covar_table_interventions[covar_table_interventions$time >= intervention_df[i,]$t_start & covar_table_interventions$time < intervention_df[i,]$t_end, names(covar_table_interventions) == name_vec[j]] = intervention_df[i, names(intervention_df) == name_vec[j]] 
       }
     }
-    covar_table_interventions[covar_table_interventions$time >= intervention_df[1,]$t_start, 'use_post_intervention_beta'] = 1
+  covar_table_interventions[covar_table_interventions$time >= intervention_df[1,]$t_start, 'use_post_intervention_beta'] = 1
   
   covar_table_interventions$nu_scale = nu_scales[covar_table_interventions$time, 'nu_scale']
   
@@ -398,7 +401,9 @@ simulate_pomp_covid__init_covariate_table <- function(input_params, intervention
   
   for (region in 1:input_params$n_regions){
       col = paste0('frac_underreported_',region)
+      col_se = paste0('frac_underreported_se_',region)
       covar_table_interventions[[col]] = frac_underreported[covar_table_interventions$time, col]
+      covar_table_interventions[[col_se]] = frac_underreported[covar_table_interventions$time, col_se]
   }
 
   for (region in 1:input_params$n_regions){
