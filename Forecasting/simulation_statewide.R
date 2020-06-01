@@ -1,4 +1,4 @@
-source('../utils.R')
+covid_source('utils.R')
 
 #' Simulate COVID pomp model
 simulate_pomp_covid <- function(
@@ -221,7 +221,6 @@ simulate_pomp_covid__init_parameters <- function(
       "alpha_IC2" = alpha_IC2,
       "alpha_IC3" = alpha_IC3,
       "alpha_IH4" = alpha_IH4,
-      "beta1" = beta1,
       "theta_test"=theta_test,
       "nu_1"= nu_1,
       "nu_3"= nu_3,
