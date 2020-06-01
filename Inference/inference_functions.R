@@ -143,28 +143,47 @@ run_pfilter_and_output_result <- function(n_reps_pfilter,
   dmeasFile,
   simstart,
   min_data_time,
-  intervention_start){
+  intervention_start,
+  calculate_mean=T){
+  require(foreach)
 
   chainID = sprintf("%s_%s", jobid, arrayid)
   output_filename = sprintf("%s/output_pfilter_%s_%s.csv", output_dir, jobid, arrayid)
   t = Sys.time()
 
-  ll <- logmeanexp(replicate(n_reps_pfilter,logLik(pfilter(pomp_object,Np=n_particles_pfilter))),se=TRUE)
-  runtime = Sys.time() - t
+  if (calculate_mean){
+    ll <- logmeanexp(replicate(n_reps_pfilter,logLik(pfilter(pomp_object,Np=n_particles_pfilter))),se=TRUE)
+    runtime = Sys.time() - t
 
-  output <- (data.frame(as.list(pomp_object@params),
-                      loglik=ll[1],
-                      loglik_se=ll[2],
-                      chain = chainID,
-                      model=dmeasFile,
-                      t0=simstart,
-                      data_start=min_data_time,
-                      intervention_start=intervention_start,
-                      runtime=runtime,
-                      nparticles=n_particles_pfilter,
-                      n_reps=n_reps_pfilter))
-
-  write.table(output, file = output_filename, sep = ",",col.names = TRUE, row.names=FALSE, append=TRUE)
+    finaloutput = (data.frame(as.list(pomp_object@params),
+                        loglik=ll[1],
+                        loglik_se=ll[2],
+                        chain = chainID,
+                        model=dmeasFile,
+                        t0=simstart,
+                        data_start=min_data_time,
+                        intervention_start=intervention_start,
+                        runtime=runtime,
+                        nparticles=n_particles_pfilter,
+                        n_reps=n_reps_pfilter))    
+    } else{
+    foreach (i=1:n_reps_pfilter, .combine='rbind') %do%{
+      ll <- logLik(pfilter(pomp_object,Np=n_particles_pfilter))
+      runtime = Sys.time() - t
+      data.frame(as.list(pomp_object@params),
+        loglik=ll,
+        loglik_se=NA,
+        chain = chainID,
+        model=dmeasFile,
+        t0=simstart,
+        data_start=min_data_time,
+        intervention_start=intervention_start,
+        runtime=runtime,
+        nparticles=n_particles_pfilter,
+        n_reps=1)
+      } -> finaloutput
+    }
+  write.table(finaloutput, file = output_filename, sep = ",",col.names = TRUE, row.names=FALSE, append=TRUE)
 }
 
 run_mif_and_output_result <- function(
