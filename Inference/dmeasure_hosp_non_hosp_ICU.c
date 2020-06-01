@@ -11,7 +11,7 @@ int alpha_IC3_int = alpha_IC3;
 const double *frac_underreported=&frac_underreported_1;
 const double *frac_underreported_se = &frac_underreported_se_1;
 // Start a counter for likelihood
-double lik_total = (give_log) ? 0 : 1;
+double lik_total = 0;
 
 // Code to have the option of looking at a single region
 int start_loop;
@@ -35,7 +35,7 @@ for (int region=start_loop; region<end_loop; region += 1){
     // check if deaths were observed
     double region_lik_hosp_deaths;
     if (ISNA(ObsHospDeaths[region])) {
-        region_lik_hosp_deaths = (give_log) ? 0 : 1;
+        region_lik_hosp_deaths = 0;
     }
 
     else{
@@ -56,24 +56,21 @@ for (int region=start_loop; region<end_loop; region += 1){
 
         // Calculate likelihood
         if (ObsHospDeaths[region] <= agg_new_D){
-            region_lik_hosp_deaths = dbetabinom(ObsHospDeaths[region], agg_new_D, nu_3 * theta_test * underreporting, dispersion, give_log); 
+            region_lik_hosp_deaths = dbetabinom(ObsHospDeaths[region], agg_new_D, nu_3 * theta_test * underreporting, dispersion, 1); 
         } else{
-            region_lik_hosp_deaths = (give_log) ? -1e10 : 0; 
+            region_lik_hosp_deaths = -1e10; 
         }
 
     }
 
-    if (give_log){
-        lik_total += region_lik_hosp_deaths;
-    } else{
-        lik_total = lik_total * region_lik_hosp_deaths;
-    }
+    lik_total += region_lik_hosp_deaths;
+
     //Rprintf("total lik is %f, hosp lik is %f\n", lik_total, region_lik_hosp_deaths);
 
     //non-hospital deaths
     double region_lik_nonhosp_deaths;
     if (ISNA(ObsNonHospDeaths[region])) {
-        region_lik_nonhosp_deaths = (give_log) ? 0 : 1;
+        region_lik_nonhosp_deaths = 0;
     }
 
     else{
@@ -96,28 +93,26 @@ for (int region=start_loop; region<end_loop; region += 1){
             double obsprob = nu_m * theta_test * underreporting;
 
             if (obsprob == 0 & ObsNonHospDeaths[region]==0){
-                region_lik_nonhosp_deaths = (give_log) ? 0 : 1;
+                region_lik_nonhosp_deaths = 0;
             } else if (obsprob == 0 & ObsNonHospDeaths[region]>0){
-                region_lik_nonhosp_deaths = (give_log) ? -1e10 : 0;
+                region_lik_nonhosp_deaths = -1e10;
             } else{
-                region_lik_nonhosp_deaths = dbetabinom(ObsNonHospDeaths[region], agg_new_D, obsprob, dispersion, give_log); 
+                region_lik_nonhosp_deaths = dbetabinom(ObsNonHospDeaths[region], agg_new_D, obsprob, dispersion, 1); 
             }
 
         } else{
-            region_lik_nonhosp_deaths = (give_log) ? -1e10 : 0; 
+            region_lik_nonhosp_deaths = -1e10;
         }
                 
     }
-    if (give_log){
-        lik_total += region_lik_nonhosp_deaths;
-    } else{
-        lik_total = lik_total * region_lik_nonhosp_deaths;
-    }
+
+    lik_total += region_lik_nonhosp_deaths;
+
     //Rprintf("total lik is %f, nonhosp lik is %f\n", lik_total, region_lik_nonhosp_deaths);
     // check if ICU cases were observed
     double region_lik_ICU;
     if (ISNA(ObsICU[region])) {
-        region_lik_ICU = (give_log) ? 0 : 1;
+        region_lik_ICU = 0;
     }
     else{
 
@@ -138,7 +133,6 @@ for (int region=start_loop; region<end_loop; region += 1){
         
         double underreporting;
         if (t < t_reporting_adjustment){
-
             double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.5);
             underreporting =  (1-(frac_underreported_draw*frac_hospitalized_deaths));
         } else{
@@ -147,21 +141,19 @@ for (int region=start_loop; region<end_loop; region += 1){
 
         // Calculate likelihood
         if (ObsICU[region] <= agg_new_ICU){
-            region_lik_ICU = dbetabinom(ObsICU[region], agg_new_ICU, nu_3 * theta_test * underreporting, dispersion, give_log); 
+            region_lik_ICU = dbetabinom(ObsICU[region], agg_new_ICU, nu_3 * theta_test * underreporting, dispersion, 1); 
         } else{
-            region_lik_ICU = (give_log) ? -1e10 : 0; 
+            region_lik_ICU = -1e10; 
         }
 
     }
 
-    if (give_log){
-        lik_total += region_lik_ICU;
-    } else{
-        lik_total = lik_total * region_lik_ICU;
-    }
+
+    lik_total += region_lik_ICU;
+
     //Rprintf("total lik is %f, icu lik is %f\n", lik_total, region_lik_ICU);
 }
 
 
-lik = lik_total;
+lik = (give_log) ? lik_total : exp(lik_total);
 //Rprintf("lik total: %f, lik: %f\n\n", lik_total, lik);
