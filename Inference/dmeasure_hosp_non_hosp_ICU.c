@@ -26,12 +26,20 @@ if (region_to_test < 0){
 
 for (int region=start_loop; region<end_loop; region += 1){
     double frac_underreported_draw = rnorm(frac_underreported[region], frac_underreported_se[region]);
-
     if (frac_underreported_draw > 1){
         frac_underreported_draw=1;
     } else if(frac_underreported_draw < 0){
         frac_underreported_draw=0;
     }
+    double hosp_reporting_scale;
+    if (t < t_reporting_adjustment){
+        double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.5);
+        hosp_reporting_scale =  (1-(frac_underreported_draw*frac_hospitalized_deaths));
+    } else{
+        hosp_reporting_scale=1;
+    }
+
+
     // check if deaths were observed
     double region_lik_hosp_deaths;
     if (ISNA(ObsHospDeaths[region])) {
@@ -45,18 +53,9 @@ for (int region=start_loop; region<end_loop; region += 1){
             agg_new_D += new_hosp_deaths[i + region * num_age_groups];
         }
 
-        double underreporting;
-        if (t < t_reporting_adjustment){
-
-            double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.5);
-            underreporting =  (1-(frac_underreported_draw*frac_hospitalized_deaths));
-        } else{
-            underreporting=1;
-        }
-
         // Calculate likelihood
         if (ObsHospDeaths[region] <= agg_new_D){
-            region_lik_hosp_deaths = dbetabinom(ObsHospDeaths[region], agg_new_D, nu_3 * theta_test * underreporting, dispersion, 1); 
+            region_lik_hosp_deaths = dbetabinom(ObsHospDeaths[region], agg_new_D, nu_3 * theta_test * hosp_reporting_scale, dispersion, 1); 
         } else{
             region_lik_hosp_deaths = -1e10; 
         }
@@ -80,17 +79,9 @@ for (int region=start_loop; region<end_loop; region += 1){
             agg_new_D += new_deaths[i + region * num_age_groups] - new_hosp_deaths[i + region * num_age_groups];
         }
 
-        double underreporting;
-        if (t < t_reporting_adjustment){
-            double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.5);
-            underreporting =  (1-(frac_underreported_draw*frac_hospitalized_deaths));
-        } else{
-            underreporting=1;
-        }
-
         // Calculate likelihood
         if (ObsNonHospDeaths[region] <= agg_new_D){
-            double obsprob = nu_m * theta_test * underreporting;
+            double obsprob = nu_m * theta_test * (1-frac_underreported_draw);
 
             if (obsprob == 0 & ObsNonHospDeaths[region]==0){
                 region_lik_nonhosp_deaths = 0;
@@ -131,17 +122,10 @@ for (int region=start_loop; region<end_loop; region += 1){
             }
         }
         
-        double underreporting;
-        if (t < t_reporting_adjustment){
-            double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.5);
-            underreporting =  (1-(frac_underreported_draw*frac_hospitalized_deaths));
-        } else{
-            underreporting=1;
-        }
 
         // Calculate likelihood
         if (ObsICU[region] <= agg_new_ICU){
-            region_lik_ICU = dbetabinom(ObsICU[region], agg_new_ICU, nu_3 * theta_test * underreporting, dispersion, 1); 
+            region_lik_ICU = dbetabinom(ObsICU[region], agg_new_ICU, nu_3 * theta_test * hosp_reporting_scale, dispersion, 1); 
         } else{
             region_lik_ICU = -1e10; 
         }
