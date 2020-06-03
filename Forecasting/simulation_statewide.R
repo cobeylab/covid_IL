@@ -229,7 +229,8 @@ simulate_pomp_covid__init_parameters <- function(
       "frac_severe_init" = frac_severe_init,
       "t_reporting_adjustment" = t_reporting_adjustment,
       "lower_bound_reporting_uncertainty" = lower_bound_reporting_uncertainty,
-      "beta_noise_amplitude" = beta_noise_amplitude
+      "beta_noise_amplitude" = beta_noise_amplitude,
+      "b_elderly" = b_elderly
     )
     
     for(i in c(1:length(population_list))){
@@ -291,6 +292,10 @@ simulate_pomp_covid__init_parameters <- function(
     )
     params[paste0("q_",c(1:n_age_groups))] = unlist(
       input_params[paste0('q_', c(1:n_age_groups))]
+    )
+
+    params[paste0("age_beta_scales_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('age_beta_scales_', c(1:n_age_groups))]
     )
 
   for(k in c(1:n_regions)){

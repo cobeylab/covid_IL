@@ -44,6 +44,7 @@ const double *mu_h = &mu_h_1;
 const double *mu_m = &mu_m_1;
 
 const double *q = &q_1;
+const double *age_beta_scales = &age_beta_scales_1;
 
 // initialize contact matrix pointer for each type of contact, starts at the contact entry for 1, 1. Assumes that the contact rates are all in one continuous block of memory
 const double *C_home = &C_home_1_1_1;    
@@ -102,6 +103,7 @@ if (region_to_test < 0){
 }
 for (int region=start_loop; region<end_loop; region += 1){
     double frac_of_deaths_non_hospitalized = region_non_hosp[region];
+
     for (int j=0; j<num_age_groups; j += 1){
 
       // double frac_of_deaths_non_hospitalized = runif(0.2, 0.4); // fraction of deaths that are non-hospitalized, draw it separately for every age group at every timestep
@@ -109,6 +111,9 @@ for (int region=start_loop; region<end_loop; region += 1){
       // calculate lambda
       double lambda = 0;
       double betaT = beta1[region];
+
+      // Nursing home scaling
+      double C_nurse = age_beta_scales[j] * b_elderly;
 
       // Get the starting index (i.e., if you are on age group 2, you want to go to column 2 of the matrix)
       int cMatrixColStartIndex = j * num_age_groups + num_age_groups*num_age_groups*region;
@@ -124,6 +129,14 @@ for (int region=start_loop; region<end_loop; region += 1){
          double scale_other = scale_other_vec[region];
          
          C = C_home[cMatrixOffset]*scale_home + C_work[cMatrixOffset]*scale_work + C_school[cMatrixOffset]*scale_school + C_other[cMatrixOffset]*scale_other;
+
+
+
+
+         if ((i == 7) | (i == 8) | (i == 9)){
+            C += C_nurse;
+         }
+
          
          if(use_post_intervention_beta > 0 ){
               betaT = beta2[region];
@@ -143,6 +156,7 @@ for (int region=start_loop; region<end_loop; region += 1){
           }
       }
       
+      betaT = betaT;
         
         double presymptomatic = 0; // This will be calculated by looping over all alpha_P subcompartments of P
         int PStart = i * alpha_P_int + region * alpha_P_int * num_age_groups;
