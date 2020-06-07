@@ -51,6 +51,8 @@ const double *phi = &phi_1;
 double *new_mild_infections = &new_mild_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
 double *new_hosp_deaths = &new_hosp_deaths_1_1;
+double *new_nonhosp_deaths = &new_nonhosp_deaths_1_1;
+double *new_hospitalizations = &new_hospitalizations_1_1;
 double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
 double *new_IH1 = &new_IH1_1_1;
 double *new_IC2 = &new_IC2_1_1;
@@ -193,6 +195,8 @@ for (int region=start_loop; region<end_loop; region += 1 ){
       new_mild_infections[i + region * num_age_groups] = new_mild;
       new_deaths[i + region * num_age_groups] = 0;
       new_hosp_deaths[i + region * num_age_groups] = 0;
+      new_nonhosp_deaths[i + region * num_age_groups] = 0;
+      new_hospitalizations[i + region * num_age_groups] = 0;
       new_symptomatic_infections[i + region * num_age_groups] = new_mild + new_IS;
       Inc[i + region * num_age_groups] = new_mild + new_asymp + new_IS;
       new_IH1[i + region * num_age_groups] = 0;

@@ -61,12 +61,14 @@ const double *scale_other_vec = &scale_other_1;
 const double *scale_beta = &scale_beta_1;
 
 const double *N = &N_1_1;
-const double *beta2 = &beta2_1;
+const double *beta2_scale = &beta2_1;
 const double *beta1 = &beta1_1;
 double *new_mild_infections = &new_mild_infections_1_1;
 double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
 double *new_hosp_deaths = &new_hosp_deaths_1_1;
+double *new_nonhosp_deaths = &new_nonhosp_deaths_1_1;
+double *new_hospitalizations = &new_hospitalizations_1_1;
 double *new_IH1 = &new_IH1_1_1;
 double *new_IC2 = &new_IC2_1_1;
 double *new_IC3 = &new_IC3_1_1;
@@ -103,7 +105,7 @@ if (region_to_test < 0){
 }
 for (int region=start_loop; region<end_loop; region += 1){
     double frac_of_deaths_non_hospitalized = region_non_hosp[region];
-
+    double beta2 = beta2_scale[region] * beta1[region];
     for (int j=0; j<num_age_groups; j += 1){
 
       // double frac_of_deaths_non_hospitalized = runif(0.2, 0.4); // fraction of deaths that are non-hospitalized, draw it separately for every age group at every timestep
@@ -130,16 +132,14 @@ for (int region=start_loop; region<end_loop; region += 1){
          
          C = C_home[cMatrixOffset]*scale_home + C_work[cMatrixOffset]*scale_work + C_school[cMatrixOffset]*scale_school + C_other[cMatrixOffset]*scale_other;
 
-
-
-
-         if ((i == 7) | (i == 8) | (i == 9)){
+         if ((i == 6) | (i == 7) | (i == 8)){
             C += C_nurse;
          }
 
          
-         if(use_post_intervention_beta > 0 ){
-              betaT = beta2[region];
+         if(use_post_intervention_beta > 0){
+              double tint = 62;
+              betaT = (beta1[region] - beta2) * exp(-(t - tint)) + beta2;
           }
           else{
             betaT = beta1[region];
@@ -151,8 +151,8 @@ for (int region=start_loop; region<end_loop; region += 1){
       // add noise to beta when evaluating increases in post-intervention transmission rate
       if(beta_noise == 1){
           betaT = rnorm(betaT, amp_noise*betaT);
-          if(betaT < beta2[region]){
-            betaT = beta2[region];
+         if(betaT < beta2){
+            betaT = beta2;
           }
       }
       
@@ -369,10 +369,13 @@ for (int region=start_loop; region<end_loop; region += 1){
       R[j + (region * num_age_groups)] += dA[alpha_A_int-1] + dIM[alpha_IM_int-1] + dIH1[alpha_IH1_int-1] + dIC2[alpha_IC2_int-1];
       D[j + (region * num_age_groups)] += dIC3[alpha_IC3_int-1] + dIH4[alpha_IH4_int-1] + dIM_dead[alpha_IM_int-1];
       
+      
       new_mild_infections[j + (region * num_age_groups)] += dP_m;
       new_symptomatic_infections[j + (region * num_age_groups)] += dP_s + dP_m;
       new_deaths[j + (region * num_age_groups)] += dIC3[alpha_IC3_int - 1] + dIH4[alpha_IH4_int - 1] + dIM_dead[alpha_IM_int-1];
       new_hosp_deaths[j + (region * num_age_groups)] += dIC3[alpha_IC3_int - 1] + dIH4[alpha_IH4_int - 1];
+      new_nonhosp_deaths[j + (region * num_age_groups)] += dIM_dead[alpha_IM_int-1];
+      new_hospitalizations[j + (region * num_age_groups)] += dIS[alpha_IS_int-1];
       Inc[j + (region * num_age_groups)] += dE[alpha_E_int - 1];
       new_IH1[j + (region * num_age_groups)] += S_to_recover;
       new_IC2[j + (region * num_age_groups)] += dIH2[alpha_IH2_int - 1];
