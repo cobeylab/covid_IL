@@ -33,7 +33,7 @@ for (int region=start_loop; region<end_loop; region += 1){
     }
     double hosp_reporting_scale;
     if (t < t_reporting_adjustment){
-        double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.5);
+        double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.1);
         hosp_reporting_scale =  (1-(frac_underreported_draw*frac_hospitalized_deaths));
     } else{
         hosp_reporting_scale=1;
@@ -135,9 +135,15 @@ for (int region=start_loop; region<end_loop; region += 1){
 
     lik_total += region_lik_ICU;
 
-    //Rprintf("total lik is %f, icu lik is %f\n", lik_total, region_lik_ICU);
+    //if (ISNA(lik_total)){
+    //    Rprintf("%f %f %f region is %d time is %f\n", region_lik_hosp_deaths, region_lik_nonhosp_deaths, region_lik_ICU, region, t);
+    //}
+
+    //if (t==139){
+    //    Rprintf("total lik is %f, icu lik is %f, nonhosp lik is %f, hosp lik is %f, region is %d\n", lik_total, region_lik_ICU, region_lik_nonhosp_deaths, region_lik_hosp_deaths, region);
+    //}
+
 }
 
 
 lik = (give_log) ? lik_total : exp(lik_total);
-//Rprintf("lik total: %f, lik: %f\n\n", lik_total, lik);
