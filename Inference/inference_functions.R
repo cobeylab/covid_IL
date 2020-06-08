@@ -67,6 +67,8 @@ print('covars initialized')
   acc_new_symptomatic <- sprintf("new_symptomatic_infections_%d",c(1:n_age_groups))
   acc_nD <- sprintf("new_deaths_%d",c(1:n_age_groups))
   acc_nHD <- sprintf("new_hosp_deaths_%d",c(1:n_age_groups))
+  acc_nNHD <- sprintf("new_nonhosp_deaths_%d", c(1:n_age_groups))
+  acc_nH <- sprintf("new_hospitalizations_%d", c(1:n_age_groups))
   acc_IH1 <- sprintf("new_IH1_%d",c(1:n_age_groups))
   acc_IC2 <- sprintf("new_IC2_%d",c(1:n_age_groups))
   acc_IC3 <- sprintf("new_IC3_%d",c(1:n_age_groups))
@@ -87,6 +89,12 @@ print('covars initialized')
     accum_names <- c(accum_names, paste0(acc_nHD, "_", i))
   }
   for(i in c(1:n_regions)){
+    accum_names <- c(accum_names, paste0(acc_nNHD, "_", i))
+  }
+  for(i in c(1:n_regions)){
+    accum_names <- c(accum_names, paste0(acc_nH, "_", i))
+  }
+  for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_IH1, "_", i))
   }
   for(i in c(1:n_regions)){
@@ -101,6 +109,7 @@ print('covars initialized')
   for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_INC, "_", i))
   }
+  
   accum_names <- accum_names[!is.na(accum_names)]
 
 
@@ -144,7 +153,8 @@ run_pfilter_and_output_result <- function(n_reps_pfilter,
   simstart,
   min_data_time,
   intervention_start,
-  calculate_mean=T){
+  calculate_mean=T,
+  region_to_fit){
   require(foreach)
 
   chainID = sprintf("%s_%s", jobid, arrayid)
@@ -183,6 +193,9 @@ run_pfilter_and_output_result <- function(n_reps_pfilter,
         n_reps=1)
       } -> finaloutput
     }
+  #conn <- dbConnect(RSQLite::SQLite(), "all_points.db")
+  #dbWriteTable(conn, sprintf("region_%s", region_to_fit), finaloutput, append=T)
+  #dbDisconnect(conn)
   write.table(finaloutput, file = output_filename, sep = ",",col.names = TRUE, row.names=FALSE, append=TRUE)
 }
 

@@ -61,7 +61,7 @@ const double *scale_other_vec = &scale_other_1;
 const double *scale_beta = &scale_beta_1;
 
 const double *N = &N_1_1;
-const double *beta2_scale = &beta2_1;
+const double *beta2 = &beta2_1;
 const double *beta1 = &beta1_1;
 double *new_mild_infections = &new_mild_infections_1_1;
 double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
@@ -105,7 +105,6 @@ if (region_to_test < 0){
 }
 for (int region=start_loop; region<end_loop; region += 1){
     double frac_of_deaths_non_hospitalized = region_non_hosp[region];
-    double beta2 = beta2_scale[region] * beta1[region];
     for (int j=0; j<num_age_groups; j += 1){
 
       // double frac_of_deaths_non_hospitalized = runif(0.2, 0.4); // fraction of deaths that are non-hospitalized, draw it separately for every age group at every timestep
@@ -122,7 +121,7 @@ for (int region=start_loop; region<end_loop; region += 1){
 
       for (int i=0; i<num_age_groups; i+=1){
         int cMatrixOffset = cMatrixColStartIndex + i;
-        double C = C_home[cMatrixOffset] + C_work[cMatrixOffset] + C_school[cMatrixOffset] + C_other[cMatrixOffset];
+        double Cmax = C_home[cMatrixOffset] + C_work[cMatrixOffset] + C_school[cMatrixOffset] + C_other[cMatrixOffset]; // maximum pre-SIP contact
 
         // implement the intervention and sum contacts 
          double scale_home = scale_home_vec[region];
@@ -130,34 +129,35 @@ for (int region=start_loop; region<end_loop; region += 1){
          double scale_school = scale_school_vec[region];
          double scale_other = scale_other_vec[region];
          
-         C = C_home[cMatrixOffset]*scale_home + C_work[cMatrixOffset]*scale_work + C_school[cMatrixOffset]*scale_school + C_other[cMatrixOffset]*scale_other;
+         double C = C_home[cMatrixOffset]*scale_home + C_work[cMatrixOffset]*scale_work + C_school[cMatrixOffset]*scale_school + C_other[cMatrixOffset]*scale_other;
 
          if ((i == 6) | (i == 7) | (i == 8)){
             C += C_nurse;
+            Cmax += C_nurse;
          }
 
-         
          if(use_post_intervention_beta > 0){
               double tint = 62;
-              betaT = (beta1[region] - beta2) * exp(-(t - tint)) + beta2;
+              if(beta1[region] >= beta2[region]){
+                  betaT = scale_beta[region] * ((beta1[region] - beta2[region]) * exp(-(t - tint)) + beta2[region]);                
+              } else{
+                  betaT = -1;
+              }
+
           }
           else{
-            betaT = beta1[region];
+            betaT = beta1[region] * scale_beta[region];
           }
       
-    
-      betaT = betaT*scale_beta[region];
       
       // add noise to beta when evaluating increases in post-intervention transmission rate
-      if(beta_noise == 1){
-          betaT = rnorm(betaT, amp_noise*betaT);
-         if(betaT < beta2){
-            betaT = beta2;
-          }
-      }
+      //if(beta_noise == 1){
+      //    betaT = rnorm(betaT, amp_noise*betaT);
+      //   if(betaT < beta2[region]){
+      //      betaT = beta2[region];
+      //    }
+      //}
       
-      betaT = betaT;
-        
         double presymptomatic = 0; // This will be calculated by looping over all alpha_P subcompartments of P
         int PStart = i * alpha_P_int + region * alpha_P_int * num_age_groups;
         for (int x=0; x<alpha_P_int; x++){
@@ -186,7 +186,7 @@ for (int region=start_loop; region<end_loop; region += 1){
           infectious_severe += IS[offset];
         }
 
-        lambda += C / N[i + (region * num_age_groups)] * betaT * q[j] *(presymptomatic + asymptomatic + infectious_mild + infectious_severe);
+        lambda += betaT * C / N[i + (region * num_age_groups)] * q[j] *(presymptomatic + asymptomatic + infectious_mild + infectious_severe);
       }
       
       int S_index = j + (region * num_age_groups);
