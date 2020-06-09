@@ -2,7 +2,7 @@
 
 unique_jobid=1010 # An identifier to keep track of runs
 task_id=1 # index of the point to sample, currently goes from 1 to the number of rows in grid_search_params.csv
-cases=./emr_linelist_fitting_data.csv # File with death and ICU data, DO NOT COMMIT TO REPO
+cases=../grid_search/emr_linelist_fitting_data.csv # File with death and ICU data, DO NOT COMMIT TO REPO
 output_dir=results_scratch/  # Directory created if it does not already exist
 
 # Shouldn't need to change anything below this point
