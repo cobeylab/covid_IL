@@ -2,6 +2,7 @@
 library(pomp)
 library(dplyr)
 library(tidyr)
+library(digest)
 
 select <- dplyr::select
 rename <- dplyr::rename
@@ -17,7 +18,7 @@ covid_set_root(root)
 default_par_file = './default_parameter_values.csv'
 deltaT = 0.1
 
-jobid_master = as.numeric(args[1])
+parstr = as.numeric(args[1])
 arrayid = as.numeric(args[2])
 output_dir = args[3]
 dmeasFile = args[4]
@@ -45,55 +46,51 @@ population_filename_4 = args[24]
 n_reps_pfilter=2
 n_particles_pfilter=2
 
-design = read.csv('grid_search_params.csv')
-
-num_points=nrow(design)
-print(head(design))
 source(covid_get_path(inference_file))
-
 source('set_up_covariates_and_data.R')
 
+design = fromJSON(parstr)
 
-if (jobid_master <= num_points){
-  for (name in names(design)){
-    pars[[name]] = design[jobid_master, name]
-  }
-  ## Make a pomp object for inference
-  print('Making pomp object')
-  pomp_object <- make_pomp_object_covid(
-      n_regions = pars$n_regions,
-      n_age_groups = n_age_groups,
-      input_params = pars,
-      delta_t = deltaT,
-      contacts=pomp_contacts,
-      population=population_list,
-      nu_scales=nu_scales,
-      beta_scales=beta_scales,
-      frac_underreported=fraction_underreported,
-      dmeasure_Csnippet = dmeasure_snippet,
-      rprocess_Csnippet = rprocess_snippet,
-      rinit_Csnippet = rinit_snippet,
-      data=data,
-      fitstart=simstart,
-      time_column='time',
-      obsnames=observed_names,
-      transformations=transformation,
-      inherit_parameters=FALSE
-      )
-
-
-  print('pomp object created, running pfilter')
-
-
-  ## Run inference and return dataframes for output
-  run_pfilter_and_output_result(n_reps_pfilter, 
-    n_particles_pfilter, 
-    jobid_master,
-    arrayid,
-    output_dir,
-    pomp_object,
-    dmeasFile,
-    simstart,
-    min_data_time,
-    intervention_start)
+for (name in names(design)){
+    pars[[name]] = design[[name]]
 }
+
+## Make a pomp object for inference
+print('Making pomp object')
+pomp_object <- make_pomp_object_covid(
+  n_regions = pars$n_regions,
+  n_age_groups = n_age_groups,
+  input_params = pars,
+  delta_t = deltaT,
+  contacts=pomp_contacts,
+  population=population_list,
+  nu_scales=nu_scales,
+  beta_scales=beta_scales,
+  frac_underreported=fraction_underreported,
+  dmeasure_Csnippet = dmeasure_snippet,
+  rprocess_Csnippet = rprocess_snippet,
+  rinit_Csnippet = rinit_snippet,
+  data=data,
+  fitstart=simstart,
+  time_column='time',
+  obsnames=observed_names,
+  transformations=transformation,
+  inherit_parameters=FALSE
+  )
+
+
+print('pomp object created, running pfilter')
+
+
+## Run inference and return dataframes for output
+run_pfilter_and_output_result(n_reps_pfilter, 
+n_particles_pfilter, 
+digest(parstr),
+arrayid,
+output_dir,
+pomp_object,
+dmeasFile,
+simstart,
+min_data_time,
+intervention_start)
+
