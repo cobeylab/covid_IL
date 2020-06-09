@@ -1,6 +1,6 @@
 library(dplyr)
 library(RSQLite)
-
+select <- dplyr::select
 # Read in arguments
 args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
