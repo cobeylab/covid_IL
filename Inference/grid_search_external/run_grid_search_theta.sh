@@ -1,7 +1,8 @@
 #!/bin/bash
 
 unique_jobid=1010 # An identifier to keep track of runs
-task_id=1 # index of the point to sample, currently goes from 1 to the number of rows in grid_search_params.csv
+parstr="{\"beta1_3\":0.03, \"beta2_3\":0.01, \"num_init_3\":5000, \"region_non_hosp_3\":0.2, \"b_elderly\":0, \"region_to_test\":3}" # json-formatted parameter string
+echo $parstr
 cases=../grid_search/emr_linelist_fitting_data.csv # File with death and ICU data, DO NOT COMMIT TO REPO
 output_dir=results_scratch/  # Directory created if it does not already exist
 
@@ -33,4 +34,4 @@ ncores=-1 # only necessary if parallelizing via slurm
 maxjobs=-1 # only necessary if parallelizing via slurm
 
 module load R/3.5.1
-Rscript pfilter_search_theta.R ${task_id} ${unique_jobid} ${output_dir} ${measurement_model} ${cases} ${population1} ${population2} ${population3} ${t0} ${tf} ${data_start} ${intervention_start} ${ncores} ${maxjobs} ${ICU_start} ${init_file} ${rproc_file} ${nu_scale_file} ${frac_underreport_file} ${contact_file} ${inference_file} ${t_ref} ${intervention_file} ${population4}
+Rscript pfilter_search_theta.R "${parstr}" ${unique_jobid} ${output_dir} ${measurement_model} ${cases} ${population1} ${population2} ${population3} ${t0} ${tf} ${data_start} ${intervention_start} ${ncores} ${maxjobs} ${ICU_start} ${init_file} ${rproc_file} ${nu_scale_file} ${frac_underreport_file} ${contact_file} ${inference_file} ${t_ref} ${intervention_file} ${population4}

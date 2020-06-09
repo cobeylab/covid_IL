@@ -3,11 +3,15 @@ library(pomp)
 library(dplyr)
 library(tidyr)
 library(digest)
+library(jsonlite)
 
 select <- dplyr::select
 rename <- dplyr::rename
 summarize <- dplyr::summarise
 contains <- dplyr::contains
+
+n_reps_pfilter=2
+n_particles_pfilter=2
 
 args = commandArgs(trailingOnly=TRUE)
 
@@ -18,7 +22,7 @@ covid_set_root(root)
 default_par_file = './default_parameter_values.csv'
 deltaT = 0.1
 
-parstr = as.numeric(args[1])
+parstr = as.character(args[1])
 arrayid = as.numeric(args[2])
 output_dir = args[3]
 dmeasFile = args[4]
@@ -43,8 +47,6 @@ t_ref=args[22]
 intervention_file=args[23]
 population_filename_4 = args[24]
 
-n_reps_pfilter=2
-n_particles_pfilter=2
 
 source(covid_get_path(inference_file))
 source('set_up_covariates_and_data.R')
