@@ -1,13 +1,7 @@
 ## Load packages and specify files 
-library(dplyr)
 library(pomp)
-library(ggplot2)
-library(magrittr)
-library(lubridate)
-library(MASS)
-library(reshape2)
 library(dplyr)
-library(foreach)
+library(tidyr)
 
 select <- dplyr::select
 rename <- dplyr::rename
@@ -47,12 +41,11 @@ inference_file=args[21]
 t_ref=args[22]
 intervention_file=args[23]
 population_filename_4 = args[24]
-region_to_test=as.numeric(args[25])
 
-n_reps_pfilter=5
-n_particles_pfilter=3000
+n_reps_pfilter=2
+n_particles_pfilter=2
 
-design = read.csv('points_to_search.csv')
+design = read.csv('grid_search_params.csv')
 
 num_points=nrow(design)
 print(head(design))

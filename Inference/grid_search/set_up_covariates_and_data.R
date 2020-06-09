@@ -1,5 +1,3 @@
-library(tidyverse)
-
 # Create result directory if it doesn't exist
 dir.create(file.path(output_dir), showWarnings = FALSE)
 
@@ -37,7 +35,7 @@ beta_scales = get_scale(t_logistic_start=simend+100,
                         intervention_lift=simend+100,
                         simstart=simstart,
                         simend=simend,
-                        max_scales=c(1,1,1,1))
+                        max_scales=c(1,1,1,1,1))
     
 print('Getting fraction underreported')
 fraction_underreported = read.csv(fraction_underreported_file)
@@ -80,8 +78,6 @@ par_frame = read.csv(default_par_file)
 pars = as.numeric(par_frame$value)
 names(pars) = par_frame$param_name
 pars = as.list(pars)
-pars$region_to_test = region_to_test
-
 
 print('Adding intervention scaling')
 pars = add_interventions(covid_get_path(intervention_file), pars)
@@ -92,10 +88,6 @@ transformation=parameter_trans(log=c('beta1_1',
     'beta1_2',
     'beta1_3',
     'beta1_4',
-    'beta2_1',
-    'beta2_2',
-    'beta2_3',
-    'beta2_4',
     'num_init_1',
     'num_init_2',
     'num_init_3',
@@ -103,6 +95,11 @@ transformation=parameter_trans(log=c('beta1_1',
     logit=c('region_non_hosp_1',
         'region_non_hosp_2',
         'region_non_hosp_3',
-        'region_non_hosp_4'))
+        'region_non_hosp_4',
+        'beta2_1',
+        'beta2_2',
+        'beta2_3',
+        'beta2_4',
+        'b_elderly'))
 
 
