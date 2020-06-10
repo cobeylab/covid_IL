@@ -33,8 +33,7 @@ for (int region=start_loop; region<end_loop; region += 1){
     }
     double hosp_reporting_scale;
     if (t < t_reporting_adjustment){
-        double frac_hospitalized_deaths = runif(lower_bound_reporting_uncertainty, 0.1);
-        hosp_reporting_scale =  (1-(frac_underreported_draw*frac_hospitalized_deaths));
+        hosp_reporting_scale =  (1-(frac_underreported_draw*frac_hospitalized_deaths_march));
     } else{
         hosp_reporting_scale=1;
     }
