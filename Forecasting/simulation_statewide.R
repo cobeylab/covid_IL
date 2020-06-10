@@ -244,7 +244,8 @@ simulate_pomp_covid__init_parameters <- function(
       "t_reporting_adjustment" = t_reporting_adjustment,
       "lower_bound_reporting_uncertainty" = lower_bound_reporting_uncertainty,
       "beta_noise_amplitude" = beta_noise_amplitude,
-      "b_elderly" = b_elderly
+      "b_elderly" = b_elderly,
+      "frac_hospitalized_deaths_march" = frac_hospitalized_deaths_march
     )
     
     for(i in c(1:length(population_list))){
@@ -252,7 +253,7 @@ simulate_pomp_covid__init_parameters <- function(
     }
     
     for(i in c(1:length(population_list))){
-      params[paste0(paste0("age_dist_",c(1:n_age_groups)),"_",i)] = population_list[[i]]$POPULATION / sum(population_list[[i]]$POPULATION)
+      params[paste0(paste0("age_dist_",c(1:n_age_groups)),"_",i)] = input_params[sprintf('age_dist_%s_%s', c(1:n_age_groups), i)] #population_list[[i]]$POPULATION / sum(population_list[[i]]$POPULATION)
     }
     
     # Beta 2's by region
