@@ -1,7 +1,7 @@
 #!/bin/bash
 
 unique_jobid=1010 # An identifier to keep track of runs
-parstr="{\"beta1_3\":0.03, \"beta2_3\":0.01, \"num_init_3\":5000, \"region_non_hosp_3\":0.2, \"b_elderly\":0, \"region_to_test\":3}" # json-formatted parameter string
+parstr="{\"beta1_3\":0.03, \"beta2_3\":0.01, \"num_init_3\":5000, \"region_non_hosp_3\":0.2, \"b_elderly\":0.35, \"frac_hospitalized_deaths_march\":0, \"region_to_test\":3}" # json-formatted parameter string
 echo $parstr
 cases=../grid_search/emr_linelist_fitting_data.csv # File with death and ICU data, DO NOT COMMIT TO REPO
 output_dir=results_scratch/  # Directory created if it does not already exist

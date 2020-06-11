@@ -10,8 +10,8 @@ rename <- dplyr::rename
 summarize <- dplyr::summarise
 contains <- dplyr::contains
 
-n_reps_pfilter=2
-n_particles_pfilter=2
+n_reps_pfilter=5
+n_particles_pfilter=3000
 
 args = commandArgs(trailingOnly=TRUE)
 
@@ -56,6 +56,11 @@ design = fromJSON(parstr)
 for (name in names(design)){
     pars[[name]] = design[[name]]
 }
+
+temp_age_dist = age_dist_frame %>% filter(b_elderly == pars$b_elderly) %>% select(-b_elderly)
+age_dist = as.numeric(temp_age_dist$value)
+names(age_dist) = temp_age_dist$param_name
+pars = c(age_dist, pars)
 
 ## Make a pomp object for inference
 print('Making pomp object')

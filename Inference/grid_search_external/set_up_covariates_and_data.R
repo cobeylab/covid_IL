@@ -79,6 +79,8 @@ pars = as.numeric(par_frame$value)
 names(pars) = par_frame$param_name
 pars = as.list(pars)
 
+age_dist_frame = read.csv('../../Parameters/consolidated_age_distributions.csv') 
+
 print('Adding intervention scaling')
 pars = add_interventions(covid_get_path(intervention_file), pars)
 
