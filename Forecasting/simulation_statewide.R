@@ -13,6 +13,8 @@ simulate_pomp_covid <- function(
   beta_scales,
   frac_underreported,
   icu_reporting,
+  gamma_c_table,
+  psi_table,
   seed = NULL,
   format = 'data.frame',
   rprocess_Csnippet,
@@ -20,7 +22,7 @@ simulate_pomp_covid <- function(
   rinit_Csnippet,
   rmeasure_Csnippet=NULL,
   obsnames = NULL,
-  pfilter_traj_params = NULL
+  initial_params = NULL
 ) {
   library(pomp)
   
@@ -37,7 +39,7 @@ simulate_pomp_covid <- function(
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, nu_scales, beta_scales, frac_underreported, icu_reporting
+    input_params, intervention_df, nu_scales, beta_scales, frac_underreported, icu_reporting, gamma_c_table, psi_table
   )
 
   covar_table <- covariate_table(
@@ -130,7 +132,7 @@ simulate_pomp_covid <- function(
       rprocess = euler(rprocess_Csnippet, delta.t = delta_t),
       rmeasure = rmeasure_Csnippet,
       
-      params = pfilter_traj_params,
+      params = c(params, initial_params),
       covar = covar_table,
       
       statenames = c(state_names, accum_names),
@@ -234,7 +236,9 @@ simulate_pomp_covid__init_parameters <- function(
       "alpha_IC3" = alpha_IC3,
       "alpha_IH4" = alpha_IH4,
       "theta_test"=theta_test,
-      "b_elderly" = b_elderly
+      "b_elderly" = b_elderly,
+      "gamma_m" = 1/inv_gamma_m,
+      "gamma_h" = 1/inv_gamma_h
     )
     
     for(i in c(1:length(population_list))){
@@ -271,9 +275,9 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("zeta_s_",c(1:n_age_groups))] = rep(1/inv_zeta_s, n_age_groups)
     params[paste0("zeta_h_",c(1:n_age_groups))] = rep(1/inv_zeta_h, n_age_groups)
     params[paste0("zeta_c_",c(1:n_age_groups))] = rep(1/inv_zeta_c, n_age_groups)
-    params[paste0("gamma_m_",c(1:n_age_groups))] = rep(1/inv_gamma_m, n_age_groups)
-    params[paste0("gamma_c_",c(1:n_age_groups))] = rep(1/inv_gamma_c, n_age_groups)
-    params[paste0("gamma_h_",c(1:n_age_groups))] = rep(1/inv_gamma_h, n_age_groups)
+    #params[paste0("gamma_m_",c(1:n_age_groups))] = rep(1/inv_gamma_m, n_age_groups)
+    #params[paste0("gamma_c_",c(1:n_age_groups))] = rep(1/inv_gamma_c, n_age_groups)
+    #params[paste0("gamma_h_",c(1:n_age_groups))] = rep(1/inv_gamma_h, n_age_groups)
     params[paste0("mu_c_",c(1:n_age_groups))] = rep(1/inv_mu_c, n_age_groups)
     params[paste0("mu_h_",c(1:n_age_groups))] = rep(1/inv_mu_h, n_age_groups)
     params[paste0("mu_m_",c(1:n_age_groups))] = rep(1/inv_mu_m, n_age_groups)
@@ -288,18 +292,18 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("kappa_",c(1:n_age_groups))] = unlist(
       input_params[paste0('kappa_', c(1:n_age_groups))]
     )
-    params[paste0("psi1_",c(1:n_age_groups))] = unlist(
-      input_params[paste0('psi1_', c(1:n_age_groups))]
-    )
-    params[paste0("psi2_",c(1:n_age_groups))] = unlist(
-      input_params[paste0('psi2_', c(1:n_age_groups))]
-    )
-    params[paste0("psi3_",c(1:n_age_groups))] = unlist(
-      input_params[paste0('psi3_', c(1:n_age_groups))]
-    )
-    params[paste0("psi4_",c(1:n_age_groups))] = unlist(
-      input_params[paste0('psi4_', c(1:n_age_groups))]
-    )
+    #params[paste0("psi1_",c(1:n_age_groups))] = unlist(
+    #  input_params[paste0('psi1_', c(1:n_age_groups))]
+    #)
+    #params[paste0("psi2_",c(1:n_age_groups))] = unlist(
+    #  input_params[paste0('psi2_', c(1:n_age_groups))]
+    #)
+    #params[paste0("psi3_",c(1:n_age_groups))] = unlist(
+    #  input_params[paste0('psi3_', c(1:n_age_groups))]
+    #)
+    #params[paste0("psi4_",c(1:n_age_groups))] = unlist(
+    #  input_params[paste0('psi4_', c(1:n_age_groups))]
+    #)
     params[paste0("q_",c(1:n_age_groups))] = unlist(
       input_params[paste0('q_', c(1:n_age_groups))]
     )
@@ -396,7 +400,9 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
   nu_scales, 
   beta_scales, 
   frac_underreported, 
-  icu_reporting) {
+  icu_reporting,
+  gamma_c_table,
+  psi_table) {
   n_interventions <- nrow(intervention_df)
   
     # Specify interventions via covariate table 
@@ -432,7 +438,9 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
       covar_table_interventions[[col]] = beta_scales[covar_table_interventions$time, col]
   }
 
-  covar_table_interventions = left_join(covar_table_interventions, icu_reporting)
+  covar_table_interventions = left_join(covar_table_interventions, icu_reporting, by='time')
+  covar_table_interventions = left_join(covar_table_interventions, gamma_c_table, by='time')
+  covar_table_interventions = left_join(covar_table_interventions, psi_table, by='time')
   covar_table_interventions
 }
 
@@ -442,14 +450,16 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
 process_pomp_covid_output <- function(sim_result, agg_regions=T) {
   n_age_groups <- sim_result$n_age_groups
   df_sim <- sim_result$raw_simulation_output
+  print('Initial renaming')
   params <- sim_result$params
-
+  print('Melting')
   df_sim_output <- df_sim %>% 
       melt(id.vars = c(".id", "time")) %>% 
       rename(
           Compartment = variable,
           Cases = value
       )
+  print('Made it')
   df_sim_output %>% mutate(Region=substr(Compartment, 
     nchar(as.character(Compartment)), 
     nchar(as.character(Compartment))),
@@ -478,7 +488,8 @@ process_pomp_covid_output <- function(sim_result, agg_regions=T) {
       startsWith(as.character(Compartment), "new_symptomatic") ~ "nS",
       startsWith(as.character(Compartment), "ObsHospDeaths") ~ "Reported hd",
       startsWith(as.character(Compartment), "ObsNonHospDeaths") ~ "Reported nhd",
-      startsWith(as.character(Compartment), "ObsICU") ~ "ObsICU"
+      startsWith(as.character(Compartment), "ObsICU") ~ "ObsICU",
+      startsWith(as.character(Compartment), "ObsHosp") ~ "ObsHosp"
   )
   ) -> df_sim_output
 
@@ -721,12 +732,13 @@ get_scale_linear = function(
                      intervention_lift,
                      simstart,
                      simend,
-                     max_scales
+                     max_scales,
+                     tm = as.Date('2020-07-01')
                      ){
     
     times = seq(1, simend, 1)
     
-    linear = function(x, mscale, tmax=as.Date('2020-07-01')){
+    linear = function(x, mscale, tmax=as.Date(tm)){
         slope = (mscale - 1) / (as.numeric(tmax - as.Date('2020-01-14')) - intervention_lift)
         mean = slope * (x-intervention_lift) + 1
         mean = if_else(mean >= mscale, mscale, mean)
@@ -750,6 +762,50 @@ get_scale_linear = function(
                                                  (time>=intervention_lift) ~ linear(times, mscale=max_scales[4])),
                 scale_beta_5 = case_when((time < intervention_lift) ~1,
                                                  (time>=intervention_lift) ~ linear(times, mscale=max_scales[5])),
+               add_noise_to_beta = case_when((time < intervention_lift) ~ 0,
+                                             (time >= intervention_lift) ~ 1))
+    
+    row.names(raw_scales) = raw_scales$time
+    raw_scales
+    
+}
+
+
+get_scale_linear_special = function(
+                     intervention_lift,
+                     intervention_reinstate,
+                     simstart,
+                     simend,
+                     max_scales,
+                     tm = as.Date('2020-07-01')
+                     ){
+    
+    times = seq(1, simend, 1)
+    
+    linear = function(x, mscale, tmax=as.Date(tm)){
+        slope = (mscale - 1) / (as.numeric(tmax - as.Date('2020-01-14')) - intervention_lift)
+        mean = slope * (x-intervention_lift) + 1
+        mean = if_else(mean >= mscale, mscale, mean)
+        mean
+    }
+
+
+    raw_scales = data.frame(time=times, 
+                            scale_beta_1=1,
+                            scale_beta_2=1,
+                            scale_beta_3=1,
+                            scale_beta_4=1,
+                            scale_beta_5=1) %>%
+        mutate(scale_beta_1 = case_when((time < intervention_lift | time >= intervention_reinstate) ~1,
+                                                 (time>=intervention_lift & time < intervention_reinstate) ~ linear(times, mscale=max_scales[1])),
+                scale_beta_2 = case_when((time < intervention_lift | time >= intervention_reinstate) ~1,
+                                                 (time>=intervention_lift & time < intervention_reinstate) ~ linear(times, mscale=max_scales[2])),
+                scale_beta_3 = case_when((time < intervention_lift | time >= intervention_reinstate) ~1,
+                                                 (time>=intervention_lift & time < intervention_reinstate) ~ linear(times, mscale=max_scales[3])),
+                scale_beta_4 = case_when((time < intervention_lift | time >= intervention_reinstate) ~1,
+                                                 (time>=intervention_lift & time < intervention_reinstate) ~ linear(times, mscale=max_scales[4])),
+                scale_beta_5 = case_when((time < intervention_lift | time >= intervention_reinstate) ~1,
+                                                 (time>=intervention_lift & time < intervention_reinstate) ~ linear(times, mscale=max_scales[5])),
                add_noise_to_beta = case_when((time < intervention_lift) ~ 0,
                                              (time >= intervention_lift) ~ 1))
     

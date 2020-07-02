@@ -8,7 +8,7 @@ int alpha_IC2_int = alpha_IC2;
 int alpha_IC3_int = alpha_IC3;
 const double *frac_underreported=&frac_underreported_1;
 const double *frac_underreported_se = &frac_underreported_se_1;
-const double *icu_reporting = &icu_report_1;
+//const double *icu_reporting = &icu_report_1;
 
 // Start a counter for likelihood
 double lik_total = 0;
@@ -87,7 +87,15 @@ for (int region=start_loop; region<end_loop; region += 1){
         }
         // Calculate likelihood
         if (ObsICU[region] <= agg_new_ICU){
-            region_lik_ICU = dbinom(ObsICU[region], agg_new_ICU, icu_report, 1); 
+
+        double icu_reporting = rnorm(0.95, 0.01);
+        if (icu_reporting > 1){
+            icu_reporting=1;
+        } else if(icu_reporting < 0){
+            icu_reporting=0;
+        }
+
+            region_lik_ICU = dbinom(ObsICU[region], agg_new_ICU, icu_reporting , 1); 
         } else{
             region_lik_ICU = -1e10; 
         }

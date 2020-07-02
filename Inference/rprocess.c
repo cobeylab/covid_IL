@@ -35,9 +35,9 @@ const double *psi2 = &psi2_1;
 const double *psi3 = &psi3_1;
 const double *psi4 = &psi4_1;
 
-const double *gamma_m = &gamma_m_1;
-const double *gamma_h = &gamma_h_1;
-const double *gamma_c = &gamma_c_1;
+//const double *gamma_m = &gamma_m_1;
+//const double *gamma_h = &gamma_h_1;
+//const double *gamma_c = &gamma_c_1;
 
 const double *mu_c = &mu_c_1;
 const double *mu_h = &mu_h_1;
@@ -248,7 +248,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       
       int IMStart = j * alpha_IM_int + region * alpha_IM_int * num_age_groups;
       double dIM[alpha_IM_int];
-      double Pr_IM = 1-exp(-gamma_m[j] * alpha_IM * dt);
+      double Pr_IM = 1-exp(-gamma_m * alpha_IM * dt);
       dIM[0] = rbinom(IM[IMStart], Pr_IM);
       IM[IMStart] += dP_m_to_recover - dIM[0];
       for (int i=1; i<alpha_IM_int; i++){
@@ -298,7 +298,7 @@ for (int region=start_loop; region<end_loop; region += 1){
 
       int IH1_Start = j * alpha_IH1_int + region * alpha_IH1_int * num_age_groups;
       double dIH1[alpha_IH1_int];
-      double Pr_IH1 = 1-exp(-gamma_h[j] * alpha_IH1 * dt);
+      double Pr_IH1 = 1-exp(-gamma_h * alpha_IH1 * dt);
       dIH1[0] = rbinom(IH1[IH1_Start], Pr_IH1);
       IH1[IH1_Start] += S_to_recover - dIH1[0];
       for (int i=1; i<alpha_IH1_int; i++){
@@ -322,7 +322,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Outflows from IC2
       int IC2_Start = j * alpha_IC2_int + region * alpha_IC2_int * num_age_groups;
       double dIC2[alpha_IC2_int];
-      double Pr_IC2 = 1-exp(-gamma_c[j] * alpha_IC2 * dt);
+      double Pr_IC2 = 1-exp(-gamma_c * alpha_IC2 * dt);
       dIC2[0] = rbinom(IC2[IC2_Start], Pr_IC2);
       IC2[IC2_Start] += dIH2[alpha_IH2_int -1] - dIC2[0];
       for (int i=1; i<alpha_IC2_int; i++){
