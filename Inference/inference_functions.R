@@ -9,9 +9,11 @@ make_pomp_object_covid <- function(
   delta_t, 
   contacts, 
   population_list, 
-  nu_scales,
   beta_scales,
   frac_underreported,
+  icu_reporting,
+  gamma_c_table,
+  psi_table,
   fitstart,
   dmeasure_Csnippet,
   rprocess_Csnippet,
@@ -46,7 +48,7 @@ make_pomp_object_covid <- function(
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, nu_scales, beta_scales, frac_underreported
+    input_params, intervention_df, beta_scales, frac_underreported, icu_reporting,  gamma_c_table, psi_table
   )
 
   covar_table <- covariate_table(
