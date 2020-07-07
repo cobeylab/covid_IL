@@ -9,7 +9,6 @@ simulate_pomp_covid <- function(
   delta_t, 
   contacts, 
   population_list, 
-  nu_scales, 
   beta_scales,
   frac_underreported,
   icu_reporting,
@@ -39,7 +38,7 @@ simulate_pomp_covid <- function(
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, nu_scales, beta_scales, frac_underreported, icu_reporting, gamma_c_table, psi_table
+    input_params, intervention_df, beta_scales, frac_underreported, icu_reporting, gamma_c_table, psi_table
   )
 
   covar_table <- covariate_table(
@@ -397,7 +396,6 @@ simulate_pomp_covid__init_intervention_df <- function(input_params) {
 
 simulate_pomp_covid__init_covariate_table <- function(input_params, 
   intervention_df, 
-  nu_scales, 
   beta_scales, 
   frac_underreported, 
   icu_reporting,
@@ -419,8 +417,6 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
       }
     }
   covar_table_interventions[covar_table_interventions$time >= intervention_df[1,]$t_start, 'use_post_intervention_beta'] = 1
-  
-  covar_table_interventions$nu_scale = nu_scales[covar_table_interventions$time, 'nu_scale']
   
   covar_table_interventions$add_noise_to_beta = beta_scales[covar_table_interventions$time, 'add_noise_to_beta']
   
