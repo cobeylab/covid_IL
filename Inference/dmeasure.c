@@ -36,15 +36,6 @@ for (int region=start_loop; region<end_loop; region += 1){
     if (reporting >= 1){
         reporting = runif(0.95, 0.999);
     }
-
-    // Reporting for ICU
-    double icu_report = rnorm(icu_reporting[region], 0.1);
-    if (icu_report > 1){
-        icu_report=1;
-    } else if(icu_report < 0){
-        icu_report=0;
-    }
-
     // check if deaths were observed
     double region_lik_deaths;
     if (ISNA(ObsDeaths[region])) {
@@ -85,16 +76,15 @@ for (int region=start_loop; region<end_loop; region += 1){
                 agg_new_ICU += IC3[offset];
             }
         }
+        
         // Calculate likelihood
         if (ObsICU[region] <= agg_new_ICU){
-
         double icu_reporting = rnorm(0.95, 0.01);
         if (icu_reporting > 1){
             icu_reporting=1;
         } else if(icu_reporting < 0){
             icu_reporting=0;
         }
-
             region_lik_ICU = dbinom(ObsICU[region], agg_new_ICU, icu_reporting , 1); 
         } else{
             region_lik_ICU = -1e10; 
