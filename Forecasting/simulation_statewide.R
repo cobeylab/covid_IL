@@ -12,7 +12,7 @@ simulate_pomp_covid <- function(
   beta_scales,
   frac_underreported,
   icu_reporting,
-  gamma_c_table,
+  gamma_table,
   psi_table,
   seed = NULL,
   format = 'data.frame',
@@ -38,7 +38,7 @@ simulate_pomp_covid <- function(
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, beta_scales, frac_underreported, icu_reporting, gamma_c_table, psi_table
+    input_params, intervention_df, beta_scales, frac_underreported, icu_reporting, gamma_table, psi_table
   )
 
   covar_table <- covariate_table(
@@ -236,8 +236,7 @@ simulate_pomp_covid__init_parameters <- function(
       "alpha_IH4" = alpha_IH4,
       "theta_test"=theta_test,
       "b_elderly" = b_elderly,
-      "gamma_m" = 1/inv_gamma_m,
-      "gamma_h" = 1/inv_gamma_h
+      "gamma_m" = 1/inv_gamma_m
     )
     
     for(i in c(1:length(population_list))){
@@ -273,14 +272,26 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("eta_",c(1:n_age_groups))] = rep(1/inv_eta, n_age_groups)
     params[paste0("zeta_s_",c(1:n_age_groups))] = rep(1/inv_zeta_s, n_age_groups)
     params[paste0("zeta_h_",c(1:n_age_groups))] = rep(1/inv_zeta_h, n_age_groups)
-    params[paste0("zeta_c_",c(1:n_age_groups))] = rep(1/inv_zeta_c, n_age_groups)
+    #params[paste0("zeta_c_",c(1:n_age_groups))] = rep(1/inv_zeta_c, n_age_groups)
     #params[paste0("gamma_m_",c(1:n_age_groups))] = rep(1/inv_gamma_m, n_age_groups)
     #params[paste0("gamma_c_",c(1:n_age_groups))] = rep(1/inv_gamma_c, n_age_groups)
     #params[paste0("gamma_h_",c(1:n_age_groups))] = rep(1/inv_gamma_h, n_age_groups)
-    params[paste0("mu_c_",c(1:n_age_groups))] = rep(1/inv_mu_c, n_age_groups)
-    params[paste0("mu_h_",c(1:n_age_groups))] = rep(1/inv_mu_h, n_age_groups)
     params[paste0("mu_m_",c(1:n_age_groups))] = rep(1/inv_mu_m, n_age_groups)
     
+    # Age-specific rates
+    params[paste0("mu_c_",c(1:n_age_groups))] = unlist(
+      1/unlist(input_params[paste0('inv_mu_c_', c(1:n_age_groups))])
+    )
+    params[paste0("mu_h_",c(1:n_age_groups))] = unlist(
+      1/unlist(input_params[paste0('inv_mu_h_', c(1:n_age_groups))])
+    )
+    params[paste0("zeta_c_",c(1:n_age_groups))] = unlist(
+      1/input_params[['inv_zeta_c_1']] #unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups))])
+    )
+
+    #params[paste0("mu_c_",c(1:n_age_groups))] = rep(1/inv_mu_c, n_age_groups)
+    #params[paste0("mu_h_",c(1:n_age_groups))] = rep(1/inv_mu_h, n_age_groups)
+
     # Probabilities
     params[paste0("rho_",c(1:n_age_groups))] = unlist(
       input_params[paste0('rho_', c(1:n_age_groups))]
@@ -399,7 +410,7 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
   beta_scales, 
   frac_underreported, 
   icu_reporting,
-  gamma_c_table,
+  gamma_table,
   psi_table) {
   n_interventions <- nrow(intervention_df)
   
@@ -435,7 +446,7 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
   }
 
   covar_table_interventions = left_join(covar_table_interventions, icu_reporting, by='time')
-  covar_table_interventions = left_join(covar_table_interventions, gamma_c_table, by='time')
+  covar_table_interventions = left_join(covar_table_interventions, gamma_table, by='time')
   covar_table_interventions = left_join(covar_table_interventions, psi_table, by='time')
   covar_table_interventions
 }
