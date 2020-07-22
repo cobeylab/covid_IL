@@ -215,13 +215,20 @@ simulate_pomp_covid__init_parameters <- function(
       "alpha_IH4" = alpha_IH4,
 
       "b_elderly" = b_elderly,
-      "gamma_m" = 1/inv_gamma_m
+      "gamma_m" = 1/inv_gamma_m,
+
+      'gamma_c_min' = 1/inv_gamma_c_min, 
+      'gamma_c_max' = 1/inv_gamma_c_max,
+      'gamma_c_slope' = gamma_c_slope,
+      'gamma_h_min' = 1/inv_gamma_h_min,
+      'gamma_h_max' = 1/inv_gamma_h_max,
+      'gamma_h_slope' = gamma_h_slope
+
+      'mu_c' = 1/inv_mu_c,
+      'mu_h' = 1/inv_mu_h
     )
     
     # Age-specific parameters
-    for(i in c(1:length(population_list))){
-      params[paste0(paste0("age_dist_",c(1:n_age_groups)),"_",i)] = input_params[sprintf('age_dist_%s_%s', c(1:n_age_groups), i)]
-    }
     params[paste0("rho_",c(1:n_age_groups))] = unlist(
       input_params[paste0('rho_', c(1:n_age_groups))]
     )
@@ -234,6 +241,9 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("age_beta_scales_",c(1:n_age_groups))] = unlist(
       input_params[paste0('age_beta_scales_', c(1:n_age_groups))]
     )
+    params[paste0("zeta_c_",c(1:n_age_groups))] = unlist(
+        1/unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups))])
+    )      
 
     # Region-specific parameters
     params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4, beta2_5)
@@ -242,34 +252,6 @@ simulate_pomp_covid__init_parameters <- function(
     
     params[paste0("beta1_logit_",c(1:n_regions))] = unlist(input_params[paste0('beta1_logit_', c(1:n_regions))])
     params[paste0("beta1_max_",c(1:n_regions))] = unlist(input_params[paste0('beta1_max_', c(1:n_regions))])
-     
-
-    params[paste0("mu_c_",c(1:n_regions))] = unlist(
-      1/unlist(input_params[paste0('inv_mu_c_', c(1:n_regions))])
-    )
-    params[paste0("mu_h_",c(1:n_regions))] = unlist(
-      1/unlist(input_params[paste0('inv_mu_h_', c(1:n_regions))])
-    )
-    # min and max get inverted
-    params[paste0("gamma_c_max_",c(1:n_regions))] = unlist(
-      1/unlist(input_params[paste0('inv_gamma_c_min_', c(1:n_regions))])
-    )
-    params[paste0("gamma_c_min_",c(1:n_regions))] = unlist(
-      1/unlist(input_params[paste0('inv_gamma_c_max_', c(1:n_regions))])
-    )
-    params[paste0("gamma_c_slope_",c(1:n_regions))] = unlist(
-      unlist(input_params[paste0('gamma_c_slope_', c(1:n_regions))])
-    )
-    params[paste0("gamma_h_max_",c(1:n_regions))] = unlist(
-      1/unlist(input_params[paste0('inv_gamma_h_min_', c(1:n_regions))])
-    )
-    params[paste0("gamma_h_min_",c(1:n_regions))] = unlist(
-      1/unlist(input_params[paste0('inv_gamma_h_max_', c(1:n_regions))])
-    )
-    params[paste0("gamma_h_slope_",c(1:n_regions))] = unlist(
-      unlist(input_params[paste0('gamma_h_slope_', c(1:n_regions))])
-    )
-
     params[paste0("t_phase3_",c(1:n_regions))] = unlist(
       unlist(input_params[paste0('t_phase3_', c(1:n_regions))])
     )
@@ -285,21 +267,8 @@ simulate_pomp_covid__init_parameters <- function(
       params[paste0(paste0("N_",c(1:n_age_groups)),"_",i)] = population_list[[i]]$POPULATION
     }
     for(i in c(1:n_regions)){
-      params[paste0("zeta_c_",c(1:n_age_groups), '_',i)] = unlist(1/unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups), '_', i)]))  
+      params[paste0(paste0("age_dist_",c(1:n_age_groups)),"_",i)] = input_params[sprintf('age_dist_%s_%s', c(1:n_age_groups), i)]
     }
-    for(i in c(1:n_regions)){
-      params[paste0("psi1_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi1_', c(1:n_age_groups), '_', i)])
-    }
-    for(i in c(1:n_regions)){
-      params[paste0("psi2_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi2_', c(1:n_age_groups), '_', i)])
-    }
-    for(i in c(1:n_regions)){
-      params[paste0("psi3_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi3_', c(1:n_age_groups), '_', i)]) 
-    }
-    for(i in c(1:n_regions)){
-      params[paste0("psi4_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi4_', c(1:n_age_groups), '_', i)])        
-    }
-
 
   # Contact parameters
   for(k in c(1:n_regions)){

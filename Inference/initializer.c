@@ -1,17 +1,19 @@
+// Number of age groups 
+int num_age_groups = round(n_age_groups);
+int reg = round(region_to_test);
 
-// number of age groups, passed as parameter
-int num_age_groups = n_age_groups;
-int alpha_E_int = alpha_E;
-int alpha_A_int =  alpha_A;
-int alpha_P_int = alpha_P; 
-int alpha_IM_int = alpha_IM; 
-int alpha_IS_int = alpha_IS; 
-int alpha_IH1_int = alpha_IH1;
-int alpha_IH2_int = alpha_IH2; 
-int alpha_IH3_int = alpha_IH3;
-int alpha_IH4_int = alpha_IH4;
-int alpha_IC2_int = alpha_IC2; 
-int alpha_IC3_int = alpha_IC3;
+// Number of sub-compartments per state 
+int alpha_E_int = round(alpha_E);
+int alpha_A_int = round(alpha_A);
+int alpha_P_int = round(alpha_P); 
+int alpha_IM_int = round(alpha_IM); 
+int alpha_IS_int = round(alpha_IS); 
+int alpha_IH1_int = round(alpha_IH1);
+int alpha_IH2_int = round(alpha_IH2); 
+int alpha_IH3_int = round(alpha_IH3);
+int alpha_IH4_int = round(alpha_IH4);
+int alpha_IC2_int = round(alpha_IC2); 
+int alpha_IC3_int = round(alpha_IC3);
 
 // initialize compartment pointers
 double *S = &S_1_1;
@@ -35,7 +37,6 @@ double *IC2 = &IC2_1_1_1;
 double *IC3 = &IC3_1_1_1;
 
 // Accumulators
-
 double *new_deaths = &new_deaths_1_1;
 double *new_hosp_deaths = &new_hosp_deaths_1_1;
 double *new_nonhosp_deaths = &new_nonhosp_deaths_1_1;
@@ -56,12 +57,12 @@ const double *num_init = &num_init_1;
 // Code to have the option of looking at a single region
 int start_loop;
 int end_loop;
-if (region_to_test < 0){
+if (reg < 0){
   start_loop = 0;
   end_loop = n_regions;
 } else{
-  start_loop = region_to_test - 1;
-  end_loop = region_to_test;
+  start_loop = reg - 1;
+  end_loop = reg;
 }
 
 for (int region=start_loop; region<end_loop; region += 1 ){

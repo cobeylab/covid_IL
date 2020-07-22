@@ -46,22 +46,13 @@ const double *N = &N_1_1; //age and region specific
   const double *scale_phase3 = &scale_phase3;
 
 // Hospitalization parameters
-  // age and region specific
-  const double *zeta_c = &zeta_c_1_1; 
-  const double *psi1 = &psi1_1_1;
-  const double *psi2 = &psi2_1_1;
-  const double *psi3 = &psi3_1_1;
-  const double *psi4 = &psi4_1_1;
+  // age-specific
+  const double *zeta_c = &zeta_c_1; 
+  const double *psi1 = &psi1_1;
+  const double *psi2 = &psi2_1;
+  const double *psi3 = &psi3_1;
+  const double *psi4 = &psi4_1;
 
-  // just region-specific
-  const double *mu_c = &mu_c_1;
-  const double *mu_h = &mu_h_1;
-  const double *gamma_c_max = &gamma_c_max_1;
-  const double *gamma_c_min = &gamma_c_min_1;
-  const double *gamma_c_slope = &gamma_c_slope_1;
-  const double *gamma_h_max=&gamma_h_max_1;
-  const double *gamma_h_min=&gamma_h_min_1;
-  const double *gamma_h_slope=&gamma_h_slope_1;
 
 // initialize compartment pointers
 double *S = &S_1_1;
@@ -101,20 +92,21 @@ if (reg < 0){
   end_loop = reg;
 }
 
+// Set gamma_c to value based on time
+double gamma_c = gamma_c_min + gamma_c_slope * (t - 47);
+if (gamma_c > gamma_c_max){
+  gamma_c = gamma_c_max;
+}
+// Set gamma_h to value
+double gamma_h = gamma_h_min + gamma_h_slope * (t - 47);
+if (gamma_h > gamma_h_max){
+  gamma_h = gamma_h_max;
+}
+
 for (int region=start_loop; region<end_loop; region += 1){
 
     // set region-specific params
       double frac_of_deaths_non_hospitalized = region_non_hosp[region];
-      // Set gamma_c to value based on time
-      double gamma_c = gamma_c_min[region] + gamma_c_slope[region] * (t - 47);
-      if (gamma_c > gamma_c_max[region]){
-        gamma_c = gamma_c_max[region];
-      }
-      // Set gamma_h to value
-      double gamma_h = gamma_h_min[region] + gamma_h_slope[region] * (t - 47);
-      if (gamma_h > gamma_h_max[region]){
-        gamma_h = gamma_h_max[region];
-      }
 
       double beta_1 = beta1_logit[region] * beta1_max[region];
     for (int j=0; j<num_age_groups; j += 1){
@@ -255,7 +247,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       double dP_m = dP[alpha_P_int-1] - dP_s;
       
       //Split outflow from P_m into death and recovery
-      double phi = 1 - (kappa[j] * (1 - psi1[j + region*num_age_groups] - psi2[j + region*num_age_groups]) * frac_of_deaths_non_hospitalized) / ((1 - frac_of_deaths_non_hospitalized) * (1 - kappa[j]));
+      double phi = 1 - (kappa[j] * (1 - psi1[j] - psi2[j]) * frac_of_deaths_non_hospitalized) / ((1 - frac_of_deaths_non_hospitalized) * (1 - kappa[j]));
       double dP_m_to_recover = rbinom(dP_m, phi); // phi is fraction mild cases that recover
       double dP_m_to_death = rbinom(dP_m, (1-phi));
       
@@ -296,8 +288,8 @@ for (int region=start_loop; region<end_loop; region += 1){
 
       // Split last outflow of IS into: deaths, ICU and recover, and recover
       int Hosp_Split[4]
-      double psisum = psi1[j + region*num_age_groups] + psi2[j + region*num_age_groups] + psi3[j + region*num_age_groups] + psi4[j + region*num_age_groups];
-      double hosp_dist[4] = {psi1[j + region*num_age_groups]/psisum, psi2[j + region*num_age_groups]/psisum, psi3[j + region*num_age_groups]/psisum, psi4[j + region*num_age_groups]/psisum};
+      double psisum = psi1[j] + psi2[j] + psi3[j] + psi4[j];
+      double hosp_dist[4] = {psi1[j]/psisum, psi2[j]/psisum, psi3[j]/psisum, psi4[j]/psisum};
       rmultinom(dIS[alpha_IS_int-1], hosp_dist, 4, Hosp_Split);
       double S_to_recover = Hosp_Split[0];
       double S_to_ICU_recover = Hosp_Split[1];
@@ -321,7 +313,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Outflows from IH2
       int IH2_Start = j * alpha_IH2_int + region * alpha_IH2_int * num_age_groups;
       double dIH2[alpha_IH2_int];
-      double Pr_IH2 = 1-exp(-zeta_c[j + region*num_age_groups] * alpha_IH2 * dt);
+      double Pr_IH2 = 1-exp(-zeta_c[j] * alpha_IH2 * dt);
       dIH2[0] = rbinom(IH2[IH2_Start], Pr_IH2);
       IH2[IH2_Start] += S_to_ICU_recover - dIH2[0];
       for (int i=1; i<alpha_IH2_int; i++){
@@ -345,7 +337,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Outflows from IH3
       int IH3_Start = j * alpha_IH3_int + region * alpha_IH3_int * num_age_groups;
       double dIH3[alpha_IH3_int];
-      double Pr_IH3 = 1-exp(-zeta_c[j + region*num_age_groups] * alpha_IH3 * dt);
+      double Pr_IH3 = 1-exp(-zeta_c[j] * alpha_IH3 * dt);
       dIH3[0] = rbinom(IH3[IH3_Start], Pr_IH3);
       IH3[IH3_Start] += S_to_ICU_death - dIH3[0];
       for (int i=1; i<alpha_IH3_int; i++){
@@ -356,7 +348,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Outflows from IC3
       int IC3_Start = j * alpha_IC3_int + region * alpha_IC3_int * num_age_groups;
       double dIC3[alpha_IC3_int];
-      double Pr_IC3 = 1-exp(-mu_c[region] * alpha_IC3 * dt);
+      double Pr_IC3 = 1-exp(-mu_c * alpha_IC3 * dt);
       dIC3[0] = rbinom(IC3[IC3_Start], Pr_IC3);
       IC3[IC3_Start] += dIH3[alpha_IH3_int -1] - dIC3[0];
       for (int i=1; i<alpha_IC3_int; i++){
@@ -368,7 +360,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Hospitalized --> dead 
       int IH4_Start = j * alpha_IH4_int + region * alpha_IH4_int * num_age_groups;
       double dIH4[alpha_IH4_int];
-      double Pr_IH4 = 1-exp(-mu_h[region] * alpha_IH4 * dt);
+      double Pr_IH4 = 1-exp(-mu_h * alpha_IH4 * dt);
       dIH4[0] = rbinom(IH4[IH4_Start], Pr_IH4);
       IH4[IH4_Start] += S_to_hosp_death - dIH4[0];
       for (int i=1; i<alpha_IH4_int; i++){

@@ -1,3 +1,6 @@
+const int num_age_groups = n_age_groups;
+const int reg = round(region_to_test);
+
 const double *new_deaths = &new_deaths_1_1; // latent incident deaths
 const double *ObsDeaths = &ObsDeaths_1; // observed incident deaths in each region
 const double *ObsICU = &ObsICU_1; // observed people in the ICU in each region
@@ -11,12 +14,15 @@ const double *IH2 = &IH2_1_1_1;
 const double *IH3 = &IH3_1_1_1;
 const double *IH4 = &IH4_1_1_1;
 
-const int num_age_groups = n_age_groups;
 const double *frac_underreported=&frac_underreported_1;
 const double *frac_underreported_se = &frac_underreported_se_1;
 
-int alpha_IC2_int = alpha_IC2; 
-int alpha_IC3_int = alpha_IC3;
+int alpha_IH1_int = round(alpha_IH1);
+int alpha_IH2_int = round(alpha_IH2); 
+int alpha_IH3_int = round(alpha_IH3);
+int alpha_IH4_int = round(alpha_IH4);
+int alpha_IC2_int = round(alpha_IC2); 
+int alpha_IC3_int = round(alpha_IC3);
 
 // Start a counter for likelihood
 double lik_total = 0;
@@ -24,12 +30,12 @@ double lik_total = 0;
 // Code to have the option of looking at a single region
 int start_loop;
 int end_loop;
-if (region_to_test < 0){
+if (reg < 0){
   start_loop = 0;
   end_loop = n_regions;
 } else{
-  start_loop = region_to_test - 1;
-  end_loop = region_to_test;
+  start_loop = reg - 1;
+  end_loop = reg;
 }
 
 for (int region=start_loop; region<end_loop; region += 1){
