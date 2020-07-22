@@ -11,7 +11,6 @@ simulate_pomp_covid <- function(
   population_list, 
   beta_scales,
   frac_underreported,
-  icu_reporting,
   gamma_table,
   psi_table,
   seed = NULL,
@@ -38,7 +37,7 @@ simulate_pomp_covid <- function(
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, beta_scales, frac_underreported, icu_reporting, gamma_table, psi_table
+    input_params, intervention_df, beta_scales, frac_underreported, gamma_table, psi_table
   )
 
   covar_table <- covariate_table(
@@ -51,22 +50,14 @@ simulate_pomp_covid <- function(
   state_names <- simulate_pomp_covid__init_state_names(n_age_groups, n_regions, subcompartment_df)
   
   ## Set up accumulator variables by age group and then by regions
-  acc_mild_age <- sprintf("new_mild_infections_%d",c(1:n_age_groups))
   acc_new_symptomatic <- sprintf("new_symptomatic_infections_%d",c(1:n_age_groups))
   acc_nD <- sprintf("new_deaths_%d",c(1:n_age_groups))
   acc_nHD <- sprintf("new_hosp_deaths_%d",c(1:n_age_groups))
   acc_nNHD <- sprintf("new_nonhosp_deaths_%d", c(1:n_age_groups))
   acc_nH <- sprintf("new_hospitalizations_%d", c(1:n_age_groups))
-  acc_IH1 <- sprintf("new_IH1_%d",c(1:n_age_groups))
-  acc_IC2 <- sprintf("new_IC2_%d",c(1:n_age_groups))
-  acc_IC3 <- sprintf("new_IC3_%d",c(1:n_age_groups))
-  acc_IH4 <- sprintf("new_IH4_%d",c(1:n_age_groups))
   acc_INC <- sprintf("Inc_%d", c(1:n_age_groups))
   
   accum_names <- array()
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_mild_age, "_", i))
-  }
   for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_new_symptomatic, "_", i))
   }
@@ -81,18 +72,6 @@ simulate_pomp_covid <- function(
   }
   for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_nH, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IH1, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IC2, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IC3, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IH4, "_", i))
   }
   for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_INC, "_", i))
@@ -172,23 +151,18 @@ simulate_pomp_covid__init_state_names <- function(n_age_groups, n_regions, subco
   state_names_S_age = c(sprintf("S_%d",c(1:n_age_groups)))
   state_names_R_age = c(sprintf("R_%d",c(1:n_age_groups)))
   state_names_D_age <- c(sprintf("D_%d",c(1:n_age_groups)))
-  #state_names_prev_age <- c(sprintf("prev_%d",c(1:n_age_groups)))
-  #state_names_totalInf_age <- c(sprintf("totalInf_%d",c(1:n_age_groups))) 
 
   state_names_S <- array()
   state_names_R <- array()
   state_names_D <- array()
-  #state_names_prev <- array()
-  #state_names_totalInf <- array()
+
   for(i in c(1:n_regions)){
     state_names_S <- c(state_names_S, paste0(state_names_S_age, "_", i))
     state_names_R <- c(state_names_R, paste0(state_names_R_age, "_", i))
     state_names_D <- c(state_names_D, paste0(state_names_D_age, "_", i))
-    #state_names_prev <- c(state_names_prev, paste0(state_names_prev_age, "_", i))
-    #state_names_totalInf <- c(state_names_totaInf, paste0(state_names_totalInf_age, "_", i))
   }
     
-  state_names <- c(state_names_S, state_names_R, state_names_D)#, state_names_totalInf, state_names_prev)
+  state_names <- c(state_names_S, state_names_R, state_names_D)
 
   for(i in c(1:nrow(subcompartment_df))) {
       state_var = as.character(subcompartment_df[i,]$state)
@@ -223,6 +197,11 @@ simulate_pomp_covid__init_parameters <- function(
       "n_regions" = n_regions,
       "region_to_test" = region_to_test,
       "sigma" = 1/inv_sigma,
+      "eta" = 1/inv_eta,
+      "zeta_h" = 1/inv_zeta_h,
+      "zeta_s" = 1/inv_zeta_s,
+      "mu_m" = 1/inv_mu_m,
+
       "alpha_E"= alpha_E,
       "alpha_P"= alpha_P,
       "alpha_A"= alpha_A,
@@ -234,94 +213,95 @@ simulate_pomp_covid__init_parameters <- function(
       "alpha_IC2" = alpha_IC2,
       "alpha_IC3" = alpha_IC3,
       "alpha_IH4" = alpha_IH4,
-      "theta_test"=theta_test,
+
       "b_elderly" = b_elderly,
       "gamma_m" = 1/inv_gamma_m
     )
     
+    # Age-specific parameters
     for(i in c(1:length(population_list))){
-      params[paste0(paste0("N_",c(1:n_age_groups)),"_",i)] = population_list[[i]]$POPULATION
+      params[paste0(paste0("age_dist_",c(1:n_age_groups)),"_",i)] = input_params[sprintf('age_dist_%s_%s', c(1:n_age_groups), i)]
     }
-    
-    for(i in c(1:length(population_list))){
-      params[paste0(paste0("age_dist_",c(1:n_age_groups)),"_",i)] = input_params[sprintf('age_dist_%s_%s', c(1:n_age_groups), i)] #population_list[[i]]$POPULATION / sum(population_list[[i]]$POPULATION)
-    }
-    
-    # Beta 2's by region
-    if (n_regions == 3){
-      params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3)
-      params[paste0("beta1_",c(1:n_regions))] = c(beta1_1, beta1_2, beta1_3)
-    
-      # Num init by region 
-      params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3)
-    } else if(n_regions == 4){
-      params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4)
-      params[paste0("beta1_",c(1:n_regions))] = c(beta1_1, beta1_2, beta1_3, beta1_4)
-      params[paste0("region_non_hosp_", 1:n_regions)] = c(region_non_hosp_1, region_non_hosp_2, region_non_hosp_3, region_non_hosp_4)
-      # Num init by region 
-      params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4)      
-    } else if(n_regions ==5){
-      params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4, beta2_5)
-      params[paste0("beta1_",c(1:n_regions))] = c(beta1_1, beta1_2, beta1_3, beta1_4, beta1_5)
-      params[paste0("region_non_hosp_", 1:n_regions)] = c(region_non_hosp_1, region_non_hosp_2, region_non_hosp_3, region_non_hosp_4, region_non_hosp_5)
-      # Num init by region 
-      params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4, num_init_5)       
-    }
-    
-    # Rates
-    params[paste0("eta_",c(1:n_age_groups))] = rep(1/inv_eta, n_age_groups)
-    params[paste0("zeta_s_",c(1:n_age_groups))] = rep(1/inv_zeta_s, n_age_groups)
-    params[paste0("zeta_h_",c(1:n_age_groups))] = rep(1/inv_zeta_h, n_age_groups)
-    #params[paste0("zeta_c_",c(1:n_age_groups))] = rep(1/inv_zeta_c, n_age_groups)
-    #params[paste0("gamma_m_",c(1:n_age_groups))] = rep(1/inv_gamma_m, n_age_groups)
-    #params[paste0("gamma_c_",c(1:n_age_groups))] = rep(1/inv_gamma_c, n_age_groups)
-    #params[paste0("gamma_h_",c(1:n_age_groups))] = rep(1/inv_gamma_h, n_age_groups)
-    params[paste0("mu_m_",c(1:n_age_groups))] = rep(1/inv_mu_m, n_age_groups)
-    
-    # Age-specific rates
-    params[paste0("mu_c_",c(1:n_age_groups))] = unlist(
-      1/unlist(input_params[paste0('inv_mu_c_', c(1:n_age_groups))])
-    )
-    params[paste0("mu_h_",c(1:n_age_groups))] = unlist(
-      1/unlist(input_params[paste0('inv_mu_h_', c(1:n_age_groups))])
-    )
-    params[paste0("zeta_c_",c(1:n_age_groups))] = unlist(
-      1/input_params[['inv_zeta_c_1']] #unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups))])
-    )
-
-    #params[paste0("mu_c_",c(1:n_age_groups))] = rep(1/inv_mu_c, n_age_groups)
-    #params[paste0("mu_h_",c(1:n_age_groups))] = rep(1/inv_mu_h, n_age_groups)
-
-    # Probabilities
     params[paste0("rho_",c(1:n_age_groups))] = unlist(
       input_params[paste0('rho_', c(1:n_age_groups))]
-    )
-    params[paste0("phi_",c(1:n_age_groups))] = unlist(
-      input_params[paste0('phi_', c(1:n_age_groups))]
     )
     params[paste0("kappa_",c(1:n_age_groups))] = unlist(
       input_params[paste0('kappa_', c(1:n_age_groups))]
     )
-    #params[paste0("psi1_",c(1:n_age_groups))] = unlist(
-    #  input_params[paste0('psi1_', c(1:n_age_groups))]
-    #)
-    #params[paste0("psi2_",c(1:n_age_groups))] = unlist(
-    #  input_params[paste0('psi2_', c(1:n_age_groups))]
-    #)
-    #params[paste0("psi3_",c(1:n_age_groups))] = unlist(
-    #  input_params[paste0('psi3_', c(1:n_age_groups))]
-    #)
-    #params[paste0("psi4_",c(1:n_age_groups))] = unlist(
-    #  input_params[paste0('psi4_', c(1:n_age_groups))]
-    #)
     params[paste0("q_",c(1:n_age_groups))] = unlist(
       input_params[paste0('q_', c(1:n_age_groups))]
     )
-
     params[paste0("age_beta_scales_",c(1:n_age_groups))] = unlist(
       input_params[paste0('age_beta_scales_', c(1:n_age_groups))]
     )
 
+    # Region-specific parameters
+    params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4, beta2_5)
+    params[paste0("region_non_hosp_", 1:n_regions)] = c(region_non_hosp_1, region_non_hosp_2, region_non_hosp_3, region_non_hosp_4, region_non_hosp_5)
+    params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4, num_init_5)       
+    
+    params[paste0("beta1_logit_",c(1:n_regions))] = unlist(input_params[paste0('beta1_logit_', c(1:n_regions))])
+    params[paste0("beta1_max_",c(1:n_regions))] = unlist(input_params[paste0('beta1_max_', c(1:n_regions))])
+     
+
+    params[paste0("mu_c_",c(1:n_regions))] = unlist(
+      1/unlist(input_params[paste0('inv_mu_c_', c(1:n_regions))])
+    )
+    params[paste0("mu_h_",c(1:n_regions))] = unlist(
+      1/unlist(input_params[paste0('inv_mu_h_', c(1:n_regions))])
+    )
+    # min and max get inverted
+    params[paste0("gamma_c_max_",c(1:n_regions))] = unlist(
+      1/unlist(input_params[paste0('inv_gamma_c_min_', c(1:n_regions))])
+    )
+    params[paste0("gamma_c_min_",c(1:n_regions))] = unlist(
+      1/unlist(input_params[paste0('inv_gamma_c_max_', c(1:n_regions))])
+    )
+    params[paste0("gamma_c_slope_",c(1:n_regions))] = unlist(
+      unlist(input_params[paste0('gamma_c_slope_', c(1:n_regions))])
+    )
+    params[paste0("gamma_h_max_",c(1:n_regions))] = unlist(
+      1/unlist(input_params[paste0('inv_gamma_h_min_', c(1:n_regions))])
+    )
+    params[paste0("gamma_h_min_",c(1:n_regions))] = unlist(
+      1/unlist(input_params[paste0('inv_gamma_h_max_', c(1:n_regions))])
+    )
+    params[paste0("gamma_h_slope_",c(1:n_regions))] = unlist(
+      unlist(input_params[paste0('gamma_h_slope_', c(1:n_regions))])
+    )
+
+    params[paste0("t_phase3_",c(1:n_regions))] = unlist(
+      unlist(input_params[paste0('t_phase3_', c(1:n_regions))])
+    )
+    params[paste0("t_phase3_max_",c(1:n_regions))] = unlist(
+      unlist(input_params[paste0('t_phase3_max_', c(1:n_regions))])
+    )
+    params[paste0("scale_phase3_",c(1:n_regions))] = unlist(
+      unlist(input_params[paste0('scale_phase3_', c(1:n_regions))])
+    )
+
+    # age and region
+    for(i in c(1:n_regions)){
+      params[paste0(paste0("N_",c(1:n_age_groups)),"_",i)] = population_list[[i]]$POPULATION
+    }
+    for(i in c(1:n_regions)){
+      params[paste0("zeta_c_",c(1:n_age_groups), '_',i)] = unlist(1/unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups), '_', i)]))  
+    }
+    for(i in c(1:n_regions)){
+      params[paste0("psi1_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi1_', c(1:n_age_groups), '_', i)])
+    }
+    for(i in c(1:n_regions)){
+      params[paste0("psi2_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi2_', c(1:n_age_groups), '_', i)])
+    }
+    for(i in c(1:n_regions)){
+      params[paste0("psi3_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi3_', c(1:n_age_groups), '_', i)]) 
+    }
+    for(i in c(1:n_regions)){
+      params[paste0("psi4_",c(1:n_age_groups), '_',i)] = unlist(input_params[paste0('psi4_', c(1:n_age_groups), '_', i)])        
+    }
+
+
+  # Contact parameters
   for(k in c(1:n_regions)){
     home_contact_vec_region <- array()
     for(i in c(1:n_age_groups)){
@@ -408,8 +388,7 @@ simulate_pomp_covid__init_intervention_df <- function(input_params) {
 simulate_pomp_covid__init_covariate_table <- function(input_params, 
   intervention_df, 
   beta_scales, 
-  frac_underreported, 
-  icu_reporting,
+  frac_underreported,
   gamma_table,
   psi_table) {
   n_interventions <- nrow(intervention_df)
@@ -445,9 +424,12 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
       covar_table_interventions[[col]] = beta_scales[covar_table_interventions$time, col]
   }
 
-  covar_table_interventions = left_join(covar_table_interventions, icu_reporting, by='time')
-  covar_table_interventions = left_join(covar_table_interventions, gamma_table, by='time')
-  covar_table_interventions = left_join(covar_table_interventions, psi_table, by='time')
+  if (!is.null(gamma_table)){
+      covar_table_interventions = left_join(covar_table_interventions, gamma_table, by='time')
+  }
+  if (!is.null(psi_table)){
+      covar_table_interventions = left_join(covar_table_interventions, psi_table, by='time')
+  }
   covar_table_interventions
 }
 
@@ -477,12 +459,8 @@ process_pomp_covid_output <- function(sim_result, agg_regions=T) {
       startsWith(as.character(Compartment), "A") ~ "A",
       startsWith(as.character(Compartment), "IS") ~ "IS",
       startsWith(as.character(Compartment), "IM") ~ "IM",
-      startsWith(as.character(Compartment), "IH1") ~ "IH",
-      startsWith(as.character(Compartment), "IH2") ~ "IH",
-      startsWith(as.character(Compartment), "IH3") ~ "IH",
-      startsWith(as.character(Compartment), "IH4") ~ "IH",
-      startsWith(as.character(Compartment), "IC2") ~ "IC",
-      startsWith(as.character(Compartment), "IC3") ~ "IC",
+      startsWith(as.character(Compartment), "IH") ~ "IH",
+      startsWith(as.character(Compartment), "IC") ~ "IC",
       startsWith(as.character(Compartment), "R") ~ "R",
       startsWith(as.character(Compartment), "D") ~ "D",
       startsWith(as.character(Compartment), "ObsDeaths") ~ "Reported deaths",
@@ -491,10 +469,7 @@ process_pomp_covid_output <- function(sim_result, agg_regions=T) {
       startsWith(as.character(Compartment), "new_hosp_deaths") ~ "nHD",
       startsWith(as.character(Compartment), "new_nonhosp_deaths") ~ "nNHD",
       startsWith(as.character(Compartment), "new_hospitalizations") ~ 'new_hospitalizations',
-      startsWith(as.character(Compartment), "new_mild") ~ "nM",
       startsWith(as.character(Compartment), "new_symptomatic") ~ "nS",
-      startsWith(as.character(Compartment), "ObsHospDeaths") ~ "Reported hd",
-      startsWith(as.character(Compartment), "ObsNonHospDeaths") ~ "Reported nhd",
       startsWith(as.character(Compartment), "ObsICU") ~ "ObsICU",
       startsWith(as.character(Compartment), "ObsHosp") ~ "ObsHosp"
   )
