@@ -222,7 +222,7 @@ simulate_pomp_covid__init_parameters <- function(
       'gamma_c_slope' = gamma_c_slope,
       'gamma_h_min' = 1/inv_gamma_h_min,
       'gamma_h_max' = 1/inv_gamma_h_max,
-      'gamma_h_slope' = gamma_h_slope
+      'gamma_h_slope' = gamma_h_slope,
 
       'mu_c' = 1/inv_mu_c,
       'mu_h' = 1/inv_mu_h
@@ -243,7 +243,19 @@ simulate_pomp_covid__init_parameters <- function(
     )
     params[paste0("zeta_c_",c(1:n_age_groups))] = unlist(
         1/unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups))])
-    )      
+    )
+    params[paste0("psi1_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('psi1_', c(1:n_age_groups))]
+    )
+    params[paste0("psi2_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('psi2_', c(1:n_age_groups))]
+    )
+    params[paste0("psi3_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('psi3_', c(1:n_age_groups))]
+    )
+    params[paste0("psi4_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('psi4_', c(1:n_age_groups))]
+    )
 
     # Region-specific parameters
     params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4, beta2_5)

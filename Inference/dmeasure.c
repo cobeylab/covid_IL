@@ -109,7 +109,7 @@ for (int region=start_loop; region<end_loop; region += 1){
     // check if non-icu hosp cases were observed
     double region_lik_hosp;
     if (ISNA(ObsHosp[region])) {
-        region_hosp_ICU = 0;
+        region_lik_hosp = 0;
     }
     else{
         // aggregate latent non-icu hospitalizations over all ages and subcompartments

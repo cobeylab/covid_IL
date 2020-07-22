@@ -17,7 +17,6 @@ int alpha_IC3_int = round(alpha_IC3);
 
 // initialize pointers for age/region-specific parameters
 const double *rho = &rho_1; // age-specific
-const double *eta = &eta_1; // age-specific
 const double *kappa = &kappa_1; // age-specific
 const double *q = &q_1; // age-specific
 const double *age_beta_scales = &age_beta_scales_1; // age-specific
@@ -25,7 +24,7 @@ const double *age_beta_scales = &age_beta_scales_1; // age-specific
 const double *region_non_hosp = &region_non_hosp_1; // region-specific
 const double *beta2 = &beta2_1; //region-specific
 const double *beta1_logit = &beta1_logit_1; //Region-specific scaling on the maximum beta1
-const double *beta1_max = &beta1_max_1 // Region specific maximum beta 1 to constrain R0
+const double *beta1_max = &beta1_max_1; // Region specific maximum beta 1 to constrain R0
 
 const double *N = &N_1_1; //age and region specific
 
@@ -43,7 +42,7 @@ const double *N = &N_1_1; //age and region specific
   const double *scale_beta = &scale_beta_1;
   const double *t_phase3 = &t_phase3_1;
   const double *t_phase3_max = &t_phase3_max_1;
-  const double *scale_phase3 = &scale_phase3;
+  const double *scale_phase3 = &scale_phase3_1;
 
 // Hospitalization parameters
   // age-specific
@@ -107,8 +106,8 @@ for (int region=start_loop; region<end_loop; region += 1){
 
     // set region-specific params
       double frac_of_deaths_non_hospitalized = region_non_hosp[region];
+      double beta1 = beta1_logit[region] * beta1_max[region];
 
-      double beta_1 = beta1_logit[region] * beta1_max[region];
     for (int j=0; j<num_age_groups; j += 1){
 
       // calculate lambda
@@ -143,7 +142,7 @@ for (int region=start_loop; region<end_loop; region += 1){
            if(use_post_intervention_beta > 0){
              // Calculate the bounds on transmission:
              double transmission_min = C * beta2[region];
-             double transmission_max = Cmax * beta1[region];
+             double transmission_max = Cmax * beta1;
              
              // Phase 2 transmission      
              if (t < t_phase3[region]){
@@ -156,18 +155,18 @@ for (int region=start_loop; region<end_loop; region += 1){
              // Phase 3 transmission
              else{
               double phase3_slope = (scale_phase3[region] * transmission_min) / (t_phase3_max[region] - t_phase3[region]);
-              double transmission_phase3 = trasmission_min + phase3_slope * (t - t_phase3[region]);
-              double transmission_phase3_max = trasmission_min + phase3_slope * (t_phase3_max[region] - t_phase3[region]);
-              transmission = (t >= t_phase3_max) ? transmission_phase3_max : transmission_phase3;
+              double transmission_phase3 = transmission_min + phase3_slope * (t - t_phase3[region]);
+              double transmission_phase3_max = transmission_min + phase3_slope * (t_phase3_max[region] - t_phase3[region]);
+              transmission = (t >= t_phase3_max[region]) ? transmission_phase3_max : transmission_phase3;
               }
             }
             // Pre-sip transmission
             else{
-              transmission = C * beta1[region];
+              transmission = C * beta1;
             }
             // Add additional scaling, mostly used for projection
             transmission = transmission * scale_beta[region]; 
-      
+
         // Sum up everyone who's infectious
         double infectious = 0; // This will be calculated by looping over all alpha_P subcompartments of P
         int PStart = i * alpha_P_int + region * alpha_P_int * num_age_groups;
@@ -221,7 +220,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Outflows from A
       int AStart = j * alpha_A_int + region * alpha_A_int * num_age_groups;
       double dA[alpha_A_int];
-      double Pr_A = 1-exp(-eta[j] * alpha_A * dt);
+      double Pr_A = 1-exp(-eta * alpha_A * dt);
       dA[0] = rbinom(A[AStart], Pr_A);
       A[AStart] += dE_A - dA[0];
       for (int i=1; i<alpha_A_int; i++){
@@ -287,7 +286,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       }
 
       // Split last outflow of IS into: deaths, ICU and recover, and recover
-      int Hosp_Split[4]
+      int Hosp_Split[4];
       double psisum = psi1[j] + psi2[j] + psi3[j] + psi4[j];
       double hosp_dist[4] = {psi1[j]/psisum, psi2[j]/psisum, psi3[j]/psisum, psi4[j]/psisum};
       rmultinom(dIS[alpha_IS_int-1], hosp_dist, 4, Hosp_Split);
