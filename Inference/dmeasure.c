@@ -12,11 +12,11 @@ const double *IH3 = &IH3_1_1_1;
 const double *IH4 = &IH4_1_1_1;
 
 const int num_age_groups = n_age_groups;
-int alpha_IC2_int = alpha_IC2; 
-int alpha_IC3_int = alpha_IC3;
 const double *frac_underreported=&frac_underreported_1;
 const double *frac_underreported_se = &frac_underreported_se_1;
-//const double *icu_reporting = &icu_report_1;
+
+int alpha_IC2_int = alpha_IC2; 
+int alpha_IC3_int = alpha_IC3;
 
 // Start a counter for likelihood
 double lik_total = 0;
@@ -84,7 +84,6 @@ for (int region=start_loop; region<end_loop; region += 1){
                 agg_new_ICU += IC3[offset];
             }
         }
-        
         // Calculate likelihood
         if (ObsICU[region] <= agg_new_ICU){
         double icu_reporting = rnorm(0.95, 0.01);
@@ -101,35 +100,30 @@ for (int region=start_loop; region<end_loop; region += 1){
     lik_total += region_lik_ICU;
 
 
-
-      // check if hosp cases were observed
+    // check if non-icu hosp cases were observed
     double region_lik_hosp;
     if (ISNA(ObsHosp[region])) {
         region_hosp_ICU = 0;
     }
     else{
-        // aggregate latent ICU over all ages and subcompartments
+        // aggregate latent non-icu hospitalizations over all ages and subcompartments
         double agg_new_hosp = 0;
         for (int i=0; i<num_age_groups; i++){
-            
             int IH1_Start = i * alpha_IH1_int + region * alpha_IH1_int * num_age_groups;
             for (int k=0; k<alpha_IH1_int; k++){
                 int offset = IH1_Start + k;
                 agg_new_hosp += IH1[offset];
             }
-
             int IH2_Start = i * alpha_IH2_int + region * alpha_IH2_int * num_age_groups;
             for (int k=0; k<alpha_IH2_int; k++){
                 int offset = IH2_Start + k;
                 agg_new_hosp += IH2[offset];
             }
-
             int IH3_Start = i * alpha_IH3_int + region * alpha_IH3_int * num_age_groups;
             for (int k=0; k<alpha_IH3_int; k++){
                 int offset = IH3_Start + k;
                 agg_new_hosp += IH3[offset];
             }
-
             int IH4_Start = i * alpha_IH4_int + region * alpha_IH4_int * num_age_groups;
             for (int k=0; k<alpha_IH4_int; k++){
                 int offset = IH4_Start + k;
@@ -141,9 +135,9 @@ for (int region=start_loop; region<end_loop; region += 1){
         if (ObsHosp[region] <= agg_new_hosp){
         double hosp_reporting = rnorm(0.95, 0.01);
         if (hosp_reporting > 1){
-            hosp_reporting=1;
+            hosp_reporting = 1;
         } else if(hosp_reporting < 0){
-            hosp_reporting=0;
+            hosp_reporting = 0;
         }
             region_lik_hosp = dbinom(ObsHosp[region], agg_new_hosp, hosp_reporting , 1); 
         } else{

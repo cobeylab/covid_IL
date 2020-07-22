@@ -11,7 +11,6 @@ make_pomp_object_covid <- function(
   population_list, 
   beta_scales,
   frac_underreported,
-  icu_reporting,
   gamma_table,
   psi_table,
   fitstart,
@@ -48,7 +47,7 @@ make_pomp_object_covid <- function(
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, beta_scales, frac_underreported, icu_reporting,  gamma_table, psi_table
+    input_params, intervention_df, beta_scales, frac_underreported, gamma_table, psi_table
   )
 
   covar_table <- covariate_table(
@@ -65,22 +64,14 @@ print('covars initialized')
   state_names <- simulate_pomp_covid__init_state_names(n_age_groups, n_regions, subcompartment_df)
   
   ## Set up accumulator variables by age group and then by regions
-  acc_mild_age <- sprintf("new_mild_infections_%d",c(1:n_age_groups))
   acc_new_symptomatic <- sprintf("new_symptomatic_infections_%d",c(1:n_age_groups))
   acc_nD <- sprintf("new_deaths_%d",c(1:n_age_groups))
   acc_nHD <- sprintf("new_hosp_deaths_%d",c(1:n_age_groups))
   acc_nNHD <- sprintf("new_nonhosp_deaths_%d", c(1:n_age_groups))
   acc_nH <- sprintf("new_hospitalizations_%d", c(1:n_age_groups))
-  acc_IH1 <- sprintf("new_IH1_%d",c(1:n_age_groups))
-  acc_IC2 <- sprintf("new_IC2_%d",c(1:n_age_groups))
-  acc_IC3 <- sprintf("new_IC3_%d",c(1:n_age_groups))
-  acc_IH4 <- sprintf("new_IH4_%d",c(1:n_age_groups))
   acc_INC <- sprintf("Inc_%d", c(1:n_age_groups))
   
   accum_names <- array()
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_mild_age, "_", i))
-  }
   for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_new_symptomatic, "_", i))
   }
@@ -95,18 +86,6 @@ print('covars initialized')
   }
   for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_nH, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IH1, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IC2, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IC3, "_", i))
-  }
-  for(i in c(1:n_regions)){
-    accum_names <- c(accum_names, paste0(acc_IH4, "_", i))
   }
   for(i in c(1:n_regions)){
     accum_names <- c(accum_names, paste0(acc_INC, "_", i))

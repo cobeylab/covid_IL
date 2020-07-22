@@ -34,28 +34,24 @@ double *IH4 = &IH4_1_1_1;
 double *IC2 = &IC2_1_1_1;
 double *IC3 = &IC3_1_1_1;
 
-const double *num_init = &num_init_1;
+// Accumulators
 
-// initialize parameter pointers
-const double *N = &N_1_1;
-const double *age_dist = &age_dist_1_1;
-
-
-// For initializing new cases;
-double *new_mild_infections = &new_mild_infections_1_1;
 double *new_deaths = &new_deaths_1_1;
 double *new_hosp_deaths = &new_hosp_deaths_1_1;
 double *new_nonhosp_deaths = &new_nonhosp_deaths_1_1;
 double *new_hospitalizations = &new_hospitalizations_1_1;
 double *new_symptomatic_infections = &new_symptomatic_infections_1_1;
-double *new_IH1 = &new_IH1_1_1;
-double *new_IC2 = &new_IC2_1_1;
-double *new_IC3 = &new_IC3_1_1;
-double *new_IH4 = &new_IH4_1_1;
 double *Inc = &Inc_1_1;
+//double *new_mild_infections = &new_mild_infections_1_1;
+//double *new_IH1 = &new_IH1_1_1;
+//double *new_IC2 = &new_IC2_1_1;
+//double *new_IC3 = &new_IC3_1_1;
+//double *new_IH4 = &new_IH4_1_1;
 
-// Right now just initialized at whatever values you want.
-// Initial conditions (e.g. S0) are vectorized parameters.
+// initialize parameter pointers
+const double *N = &N_1_1;
+const double *age_dist = &age_dist_1_1;
+const double *num_init = &num_init_1;
 
 // Code to have the option of looking at a single region
 int start_loop;
@@ -155,17 +151,16 @@ for (int region=start_loop; region<end_loop; region += 1 ){
       S[i + region * num_age_groups] = N[i + region * num_age_groups] - rN[i];
       R[i + region * num_age_groups] = 0;
       D[i + region * num_age_groups] = 0;
-      new_mild_infections[i + region * num_age_groups] = 0;
       new_deaths[i + region * num_age_groups] = 0;
       new_hosp_deaths[i + region * num_age_groups] = 0;
       new_nonhosp_deaths[i + region * num_age_groups] = 0;
       new_hospitalizations[i + region * num_age_groups] = 0;
-      new_symptomatic_infections[i + region * num_age_groups] = 0;
       Inc[i + region * num_age_groups] = rN[i];
-      new_IH1[i + region * num_age_groups] = 0;
-      new_IC2[i + region * num_age_groups] = 0;
-      new_IC3[i + region * num_age_groups] = 0;
-      new_IH4[i + region * num_age_groups] = 0;
-
+      //new_IH1[i + region * num_age_groups] = 0;
+      //new_IC2[i + region * num_age_groups] = 0;
+      //new_IC3[i + region * num_age_groups] = 0;
+      //new_IH4[i + region * num_age_groups] = 0;
+      //new_symptomatic_infections[i + region * num_age_groups] = 0;
+      //new_mild_infections[i + region * num_age_groups] = 0;
   }
 }
