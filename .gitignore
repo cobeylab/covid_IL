@@ -2,3 +2,11 @@
 *.rda
 *.zip
 slurm*.out
+emr_linelist_fitting_data.csv
+submodel_fits/
+old_fits/
+*.rds
+consolidated*.csv
+baseline*.csv
+endsip*.csv
+Inference/inference*/*.csv
