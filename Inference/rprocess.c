@@ -109,6 +109,14 @@ for (int region=start_loop; region<end_loop; region += 1){
       double beta1 = beta1_logit[region] * beta1_max[region];
 
     for (int j=0; j<num_age_groups; j += 1){
+      int zeta_c_effective;
+      if (j < 3){
+        zeta_c_effective = 0;
+      } else if (j < 6){
+        zeta_c_effective = 1;
+      } else{
+        zeta_c_effective = 2;
+      }
 
       // calculate lambda
       double lambda = 0;
@@ -312,7 +320,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Outflows from IH2
       int IH2_Start = j * alpha_IH2_int + region * alpha_IH2_int * num_age_groups;
       double dIH2[alpha_IH2_int];
-      double Pr_IH2 = 1-exp(-zeta_c[j] * alpha_IH2 * dt);
+      double Pr_IH2 = 1-exp(-zeta_c[zeta_c_effective] * alpha_IH2 * dt);
       dIH2[0] = rbinom(IH2[IH2_Start], Pr_IH2);
       IH2[IH2_Start] += S_to_ICU_recover - dIH2[0];
       for (int i=1; i<alpha_IH2_int; i++){
@@ -336,7 +344,7 @@ for (int region=start_loop; region<end_loop; region += 1){
       // Outflows from IH3
       int IH3_Start = j * alpha_IH3_int + region * alpha_IH3_int * num_age_groups;
       double dIH3[alpha_IH3_int];
-      double Pr_IH3 = 1-exp(-zeta_c[j] * alpha_IH3 * dt);
+      double Pr_IH3 = 1-exp(-zeta_c[zeta_c_effective] * alpha_IH3 * dt);
       dIH3[0] = rbinom(IH3[IH3_Start], Pr_IH3);
       IH3[IH3_Start] += S_to_ICU_death - dIH3[0];
       for (int i=1; i<alpha_IH3_int; i++){
