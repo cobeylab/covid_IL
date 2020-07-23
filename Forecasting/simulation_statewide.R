@@ -241,8 +241,8 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("age_beta_scales_",c(1:n_age_groups))] = unlist(
       input_params[paste0('age_beta_scales_', c(1:n_age_groups))]
     )
-    params[paste0("zeta_c_",c(1:n_age_groups))] = unlist(
-        1/unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups))])
+    params[paste0("zeta_c_",c(1:3))] = unlist(
+        1/unlist(input_params[paste0('inv_zeta_c_', c(1:3))])
     )
     params[paste0("psi1_",c(1:n_age_groups))] = unlist(
       input_params[paste0('psi1_', c(1:n_age_groups))]
