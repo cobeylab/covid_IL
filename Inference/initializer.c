@@ -161,7 +161,7 @@ for (int region=start_loop; region<end_loop; region += 1 ){
       //new_IC2[i + region * num_age_groups] = 0;
       //new_IC3[i + region * num_age_groups] = 0;
       //new_IH4[i + region * num_age_groups] = 0;
-      //new_symptomatic_infections[i + region * num_age_groups] = 0;
+      new_symptomatic_infections[i + region * num_age_groups] = 0;
       //new_mild_infections[i + region * num_age_groups] = 0;
   }
 }

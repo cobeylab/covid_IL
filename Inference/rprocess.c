@@ -120,7 +120,6 @@ for (int region=start_loop; region<end_loop; region += 1){
 
       // calculate lambda
       double lambda = 0;
-      double transmission;
 
       // Nursing home scaling
       double C_nurse = age_beta_scales[j] * b_elderly;

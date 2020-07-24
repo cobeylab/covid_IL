@@ -2,7 +2,9 @@ const int num_age_groups = n_age_groups;
 const int reg = round(region_to_test);
 
 const double *new_deaths = &new_deaths_1_1; // latent incident deaths
+const double *new_hosp_deaths = &new_hosp_deaths_1_1; // latent hospitalized deaths
 const double *ObsDeaths = &ObsDeaths_1; // observed incident deaths in each region
+const double *ObsHospDeaths = &ObsHospDeaths_1; // observed incident deaths in each region
 const double *ObsICU = &ObsICU_1; // observed people in the ICU in each region
 const double *ObsHosp = &ObsHosp_1; // observed census hospitalizations in each region
 
@@ -70,6 +72,33 @@ for (int region=start_loop; region<end_loop; region += 1){
     }
     lik_total += region_lik_deaths;
 
+
+    double region_lik_hosp_deaths;
+    if (ISNA(ObsHospDeaths[region])) {
+        region_lik_hosp_deaths = 0;
+    }
+    else{
+        // loop and aggregate latent incident deaths accross age group
+        double agg_new_D = 0;
+        for (int i=0; i<num_age_groups; i++){
+            agg_new_D += new_hosp_deaths[i + region * num_age_groups];
+        }
+        // Calculate likelihood
+        if (ObsHospDeaths[region] <= agg_new_D){
+            double hosp_death_reporting = rnorm(0.95, 0.01);
+            if (hosp_death_reporting > 1){
+                hosp_death_reporting=0.999;
+            } else if(hosp_death_reporting < 0){
+                hosp_death_reporting=0;
+            }
+            region_lik_hosp_deaths = dbinom(ObsHospDeaths[region], agg_new_D, hosp_death_reporting, 1); 
+        } else{
+            region_lik_hosp_deaths = -1e10; 
+        }
+    }
+    lik_total += region_lik_hosp_deaths;
+
+
     // check if ICU cases were observed
     double region_lik_ICU;
     if (ISNA(ObsICU[region])) {
@@ -94,7 +123,7 @@ for (int region=start_loop; region<end_loop; region += 1){
         if (ObsICU[region] <= agg_new_ICU){
         double icu_reporting = rnorm(0.95, 0.01);
         if (icu_reporting > 1){
-            icu_reporting=1;
+            icu_reporting=0.999;
         } else if(icu_reporting < 0){
             icu_reporting=0;
         }
@@ -141,7 +170,7 @@ for (int region=start_loop; region<end_loop; region += 1){
         if (ObsHosp[region] <= agg_new_hosp){
         double hosp_reporting = rnorm(0.95, 0.01);
         if (hosp_reporting > 1){
-            hosp_reporting = 1;
+            hosp_reporting = 0.999;
         } else if(hosp_reporting < 0){
             hosp_reporting = 0;
         }
