@@ -137,7 +137,7 @@ statewide = plotout %>%
 plotout = bind_rows(plotout, statewide, chicago_out)
 
 ## Plot
-
+write.csv(plotout, './mle_plotting_data.csv', row.names=F)
 
 region_plot_order=c('northeast','southern','central','northcentral', 'chicago', 'Illinois')
 

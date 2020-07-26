@@ -7,15 +7,15 @@ dir.create(file.path(projection_dir), showWarnings = FALSE)
 root <- '../../'
 source(file.path(root, '_covid_root.R'))
 covid_set_root(root)
-source('Forecasting/simulation_statewide.R')
-source('Forecasting/R0_functions.R')
+source(covid_get_path('Forecasting/simulation_statewide.R'))
+source(covid_get_path('Forecasting/R0_functions.R'))
 source('./input_file_specification.R')
 region_order = c('northcentral','central','northeast','southern', 'chicago')
 
 default_par_file = './final_mle_pars.csv'
 fit_df = read.csv('./final_points.csv')
 
-output_file = paste0(projetion_dir,'/R0_bounds.csv')
+output_file = paste0(projetion_dir,'/R0_over_time.csv')
 
 load(contact_filename)
 ### User-specification of parameters and interventions for model 
@@ -36,6 +36,7 @@ colnames(population4) <- c("AGE_GROUP_MIN", "POPULATION")
 population5 = read.csv(population_filename_5)
 colnames(population5) <- c("AGE_GROUP_MIN", "POPULATION")
 n_age_groups = nrow(population1)
+
 # ASSUME FOLLOWING ORDER: NORTH-CENTRAL, CENTRAL, NORTHEAST, SOUTHERN 
 population_list=list(population1, population2, population3, population4, population5)   
 
@@ -68,13 +69,13 @@ foreach (parset_id=1:max(fit_df$parset), .combine='rbind') %do%{
     R0_regions = c('restore_northcentral', 'restore_central','restore_northeast','restore_southern', 'chicago')
     fnhd = as.numeric(pars[paste0('region_non_hosp_', seq(1, 5))])
     R0_scales_reg = c(0.1, 0.2, 0.05, 0.2, 0.05)
+
     foreach (regionnum=1:length(R0_regions), .combine='rbind') %do%{
         region = R0_regions[regionnum]
         b_pre = pars[[paste0('beta1_logit_', regionnum)]] * betamax
         b_post = pars[[paste0('beta2_',regionnum)]]
         b_eld = pars$b_elderly
         pre_int = get_R0(region, b_pre, b_eld, b_young=1,as.Date('2020-03-01'), R0_pars, fnhd)
-        post_int = get_R0(region, b_post, b_eld, b_young=1, as.Date('2020-03-28'), R0_pars, fnhd)
         
         R0_diff = ((pre_int - post_int) * R0_scales_reg[regionnum] + post_int) / post_int
 
