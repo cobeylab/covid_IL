@@ -7,11 +7,16 @@ select <- dplyr::select
 # Read in arguments
 args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
-num_points=2500
-
+num_points=2500 # number of points to search in the grid
+source('./input_file_specification.R')
 # Aggregate points
 print('Aggregating points')
-parnames = c('beta1_logit', 'beta2', 'num_init', 'scale_phase3')
+if (use_changepoint){
+  parnames = c('beta1', 'beta2', 'num_init', 'scale_phase3') 
+} else{
+  parnames = c('beta1', 'num_init')
+}
+
 output_filename <- paste0(output_dir, "consolidated.mif.pfilter.csv")
 file_path = output_dir #Replace this with a file path to the directory storing the csv files 
 file_list <- Sys.glob(paste0(output_dir, "/output_mif*.csv"))
@@ -34,9 +39,6 @@ foreach(r=1:nrow(mles), .combine='rbind') %do%{
     upper_pars = pars * 1.1
 
     names(lower_pars) = names(upper_pars) = parnames
-    if (upper_pars[['beta1_logit']] >= 1){
-        upper_pars[['beta1_logit']] = 0.99
-    }
     design = sobolDesign(upper=upper_pars,
         lower=lower_pars,
         num_points)
@@ -44,22 +46,7 @@ foreach(r=1:nrow(mles), .combine='rbind') %do%{
     design
 } -> final_design
 
+
+## Points for grid search
 saveRDS(final_design, 'mle_grid.rds')
-
-# Plot the MLE for evaluation
-default_pars = read.csv('./default_parameter_values.csv')
-rownames(default_pars) = default_pars$param_name
-
-for(reg in 1:5){
-    cols = c(paste0(c('beta1_logit', 'beta2', 'num_init', 'scale_phase3'), '_', reg))
-    pars = mles %>%
-        filter(region_to_test == reg) %>%
-        select(cols) %>% 
-        unlist()
-    default_pars[names(pars), 'value'] = pars
-}
-
-write.csv(default_pars, './initial_mle_pars.csv', row.names=F)
-
-
 

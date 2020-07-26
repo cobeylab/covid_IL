@@ -21,7 +21,13 @@ summarize <- dplyr::summarise
 contains <- dplyr::contains
 
 # Set mif search parameters
+n_mif = 50
+n_particles_mif = 3000
+cooling_rate = 0.95
+num_points = 100
+
 n_reps_pfilter = 3
+n_particles_pfilter = 5000
 
 root <- '../../'
 source(file.path(root, '_covid_root.R'))
@@ -37,51 +43,19 @@ deltaT = 0.1
 
 # Reading input args
 args = commandArgs(trailingOnly=TRUE)
-jobid_master = as.numeric(args[1])
-arrayid = as.numeric(args[2])
-num_cores=as.numeric(args[3])
-maxjobs=as.numeric(args[4])
-output_dir=args[5]
+jobid_master = 1
+arrayid = 1
+num_cores=1
+maxjobs=1
+region_to_test=1
+output_dir='./test'
 
 
 # Read in inference functions
 source(covid_get_path(inference_file))
 source('set_up_covariates_and_data.R')
 
-design=readRDS('mle_grid.rds')
-num_points = nrow(design)
 
-
-cl <- makeCluster(num_cores)
-registerDoParallel(cl)
-
-loopstart = (jobid_master - 1) * maxjobs + 1
-loopend = loopstart + (maxjobs-1)
-print(loopstart)
-print(loopend)
-print(maxjobs)
-print(num_cores)
-foreach(jobid=loopstart:loopend,
-  .packages=c('pomp', 'dplyr', 'reshape2')) %dopar%{
-    ## Set parameters to search over
-    select <- dplyr::select
-    rename <- dplyr::rename
-    summarize <- dplyr::summarise
-    contains <- dplyr::contains
-
-    if (jobid <= num_points){
-      for (name in names(design)){
-        if(name == 'region_to_test'){
-          pars[['region_to_test']] = design[jobid, name]
-        } else{
-          pars[[paste0(name, '_', design[jobid, 'region_to_test'])]] = design[jobid, name]
-        }
-        
-      }
-
-
-      ## Make a pomp object for inference
-      print('Making pomp object')
       pomp_object <- make_pomp_object_covid(
           n_regions = pars$n_regions,
           n_age_groups = n_age_groups,
@@ -102,16 +76,3 @@ foreach(jobid=loopstart:loopend,
           transformations=transformation,
           inherit_parameters=FALSE
           )
-
-      print('pomp object created, running grid')
-
-    ll <- logmeanexp(replicate(n_reps_pfilter,logLik(pfilter(pomp_object,Np=n_particles_pfilter))),se=TRUE)
-    finaloutput = (data.frame(as.list(pomp_object@params),
-                        loglik=ll[1],
-                        loglik_se=ll[2],
-                        model=dmeasFile,
-                        nparticles=n_particles_pfilter,
-                        n_reps=n_reps_pfilter))
-    write.table(finaloutput, file=sprintf("%s/output_grid_%s_%s.csv", output_dir, jobid, arrayid), sep = ",",col.names = TRUE, row.names=FALSE) 
-    }
-} ->dummy

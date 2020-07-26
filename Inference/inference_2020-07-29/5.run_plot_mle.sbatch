@@ -6,4 +6,4 @@
 #SBATCH --array=1
 
 module load R/3.5.1
-Rscript 2.aggregate_points.R ${output_dir}
+Rscript 5.plot_mle.R ${output_dir}

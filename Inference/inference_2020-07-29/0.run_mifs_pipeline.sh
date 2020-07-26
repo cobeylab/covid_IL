@@ -7,7 +7,7 @@ export maxjobs=28
 export output_dir='mifs_debug/'
 
 export region_to_test=1
-job1=$(sbatch ${partitionspec} --array=1 --export=ALL 1.run_mif.sbatch)
+job1=$(sbatch ${partitionspec} --array=1-4 --export=ALL 1.run_mif.sbatch)
 
 export region_to_test=2
 job2=$(sbatch ${partitionspec} --array=1-4 --export=ALL 1.run_mif.sbatch)

@@ -21,13 +21,11 @@ summarize <- dplyr::summarise
 contains <- dplyr::contains
 
 # Set mif search parameters
-n_mif = 50
-n_particles_mif = 3000
+
 cooling_rate = 0.95
 num_points = 100
-
 n_reps_pfilter = 3
-n_particles_pfilter = 5000
+
 
 root <- '../../'
 source(file.path(root, '_covid_root.R'))
@@ -56,67 +54,102 @@ source(covid_get_path(inference_file))
 source('set_up_covariates_and_data.R')
 pars$region_to_test = region_to_test
 
-parnames = c('beta1_logit_', 'beta2_', 'num_init_', 'scale_phase3_')
-lower_pars = c(0.5, 0.02, 10, 0.1)
-upper_pars = c(0.9, 0.04, 1000, 0.5)
-names(lower_pars) = paste0(parnames, region_to_test)
-names(upper_pars) = paste0(parnames, region_to_test)
-design=sobolDesign(lower=lower_pars, upper=upper_pars, num_points)
 
-if (region_to_test == 1){
-  rw_vec = rw.sd(
-                 beta1_logit_1 = 0.01,
-                 beta2_1 = 0.01,
-                 scale_phase3_1=0.01,
-                 num_init_1=ivp(0.1)
-                 )
 
-} else if(region_to_test == 2){
-  rw_vec = rw.sd(
-                 beta1_logit_2 = 0.01,
-                 beta2_2 = 0.01,
-                 scale_phase3_2=0.01,
-                 num_init_2=ivp(0.1)
-                 )
+if (use_changepoint){
+  parnames = c('beta1_', 'beta2_', 'num_init_', 'scale_phase3_', 'scale_phase4_')
+  lower_pars = c(0.5, 0.02, 10, 0.1, 0.1)
+  upper_pars = c(0.9, 0.04, 1000, 0.5, 0.5)
+  names(lower_pars) = paste0(parnames, region_to_test)
+  names(upper_pars) = paste0(parnames, region_to_test)
+  design=sobolDesign(lower=lower_pars, upper=upper_pars, num_points)
 
-} else if (region_to_test == 3){
-  rw_vec = rw.sd(
-                 beta1_logit_3 = 0.01,
-                 beta2_3 = 0.01,
-                 scale_phase3_3=0.01,
-                 num_init_3=ivp(0.1)
-                 )
-} else if (region_to_test == 4){
-  rw_vec = rw.sd(
-                 beta1_logit_4 = 0.01,
-                 beta2_4 = 0.01,
-                 scale_phase3_4=0.01,
-                 num_init_4=ivp(0.1)
-                 )
+  if (region_to_test == 1){
+    rw_vec = rw.sd(
+                   beta1_1 = 0.01,
+                   beta2_1 = 0.01,
+                   scale_phase3_1=0.01,
+                   scale_phase4_1=0.01,                   
+                   num_init_1=ivp(0.1)
+                   )
 
-} else if (region_to_test == 5){
-  rw_vec = rw.sd(
-                 beta1_logit_5 = 0.01,
-                 beta2_5 = 0.01,
-                 scale_phase3_5=0.01,
-                 num_init_5=ivp(0.1)
-                 )
+  } else if(region_to_test == 2){
+    rw_vec = rw.sd(
+                   beta1_2 = 0.01,
+                   beta2_2 = 0.01,
+                   scale_phase3_2=0.01,
+                   scale_phase4_2=0.01,    
+                   num_init_2=ivp(0.1)
+                   )
+
+  } else if (region_to_test == 3){
+    rw_vec = rw.sd(
+                   beta1_3 = 0.01,
+                   beta2_3 = 0.01,
+                   scale_phase3_3=0.01,
+                   scale_phase4_3=0.01,  
+                   num_init_3=ivp(0.1)
+                   )
+  } else if (region_to_test == 4){
+    rw_vec = rw.sd(
+                   beta1_4 = 0.01,
+                   beta2_4 = 0.01,
+                   scale_phase3_4=0.01,
+                   scale_phase4_4=0.01,  
+                   num_init_4=ivp(0.1)
+                   )
+
+  } else if (region_to_test == 5){
+    rw_vec = rw.sd(
+                   beta1_5 = 0.01,
+                   beta2_5 = 0.01,
+                   scale_phase3_5=0.01,
+                   scale_phase4_5=0.01,  
+                   num_init_5=ivp(0.1)
+                   )
+  }
+
+} else {
+  parnames = c('beta1_', 'num_init_')
+  lower_pars = c(0.5, 10)
+  upper_pars = c(0.9, 1000)
+  names(lower_pars) = paste0(parnames, region_to_test)
+  names(upper_pars) = paste0(parnames, region_to_test)
+  design=sobolDesign(lower=lower_pars, upper=upper_pars, num_points)
+
+  if (region_to_test == 1){
+    rw_vec = rw.sd(
+                   beta1_1 = 0.01,               
+                   num_init_1=ivp(0.1)
+                   )
+
+  } else if(region_to_test == 2){
+    rw_vec = rw.sd(
+                   beta1_2 = 0.01, 
+                   num_init_2=ivp(0.1)
+                   )
+
+  } else if (region_to_test == 3){
+    rw_vec = rw.sd(
+                   beta1_3 = 0.01, 
+                   num_init_3=ivp(0.1)
+                   )
+  } else if (region_to_test == 4){
+    rw_vec = rw.sd(
+                   beta1_4 = 0.01,
+                   num_init_4=ivp(0.1)
+                   )
+
+  } else if (region_to_test == 5){
+    rw_vec = rw.sd(
+                   beta1_5 = 0.01,
+                   num_init_5=ivp(0.1)
+                   )
+  }
 }
 
 cl <- makeCluster(num_cores)
 registerDoParallel(cl)
-
-
-# Setting up intervention
-pars = add_interventions(covid_get_path(intervention_file), pars)
-
-temp_age_dist = age_dist_frame %>% 
-  filter(b_elderly == pars$b_elderly) %>% select(-b_elderly)
-age_dist = as.numeric(temp_age_dist$value)
-names(age_dist) = temp_age_dist$param_name
-pars = c(age_dist, pars)
-
-print(pars)
 
 loopstart = (jobid_master - 1) * maxjobs + 1
 loopend = loopstart + (maxjobs-1)
@@ -148,6 +181,7 @@ foreach(jobid=loopstart:loopend,
           contacts=pomp_contacts,
           population=population_list,
           beta_scales=beta_scales,
+          beta_covar=beta_covariate_column,
           frac_underreported=fraction_underreported,
           dmeasure_Csnippet = dmeasure_snippet,
           rprocess_Csnippet = rprocess_snippet,

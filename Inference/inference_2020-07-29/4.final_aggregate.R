@@ -7,10 +7,17 @@ select <- dplyr::select
 # Read in arguments
 args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
+source('./input_file_specification.R')
 
 # Aggregate points
 print('Aggregating points')
-parnames = c('beta1_logit', 'beta2', 'num_init', 'scale_phase3')
+
+if (use_changepoint){
+  parnames = c('beta1', 'beta2', 'num_init', 'scale_phase3', 'scale_phase4') 
+} else{
+  parnames = c('beta1', 'num_init')
+}
+
 output_filename <- paste0(output_dir, "consolidated.final.pfilter.csv")
 file_path = output_dir #Replace this with a file path to the directory storing the csv files 
 file_list <- Sys.glob(paste0(output_dir, "/output*.csv"))
@@ -36,12 +43,14 @@ global_mle = mles %>%
     select(region_to_test, loglik, loglik_se, all_pars) %>%
     arrange(region_to_test, loglik)
 
+global_ll = sum(global_mle$loglik)
+
 # produce mle parfile for easy simulation
 default_pars = read.csv('./default_parameter_values.csv')
 rownames(default_pars) = default_pars$param_name
 
 for(reg in 1:5){
-    cols = c(paste0(c('beta1_logit', 'beta2', 'num_init', 'scale_phase3'), '_', reg))
+    cols = c(paste0(parnames, '_', reg))
     pars = global_mle %>%
         filter(region_to_test == reg) %>%
         select(cols) %>% 
@@ -49,11 +58,14 @@ for(reg in 1:5){
     default_pars[names(pars), 'value'] = pars
 }
 
+default_pars['loglik', 'value'] = global_ll
+default_pars['npars_estimated', 'value'] = length(parnames) * 5
+
 write.csv(default_pars, './final_mle_pars.csv', row.names=F) # final parameters of MLE
 
 # Produce sampling df
 foreach (reg=1:5, .combine='cbind') %do%{
-    cols = c(paste0(c('beta1_logit', 'beta2', 'num_init', 'scale_phase3'), '_', reg))
+    cols = c(paste0(parnames, '_', reg))
 
     mles %>% filter(region_to_test==reg) -> df_output
     
@@ -76,5 +88,8 @@ foreach (reg=1:5, .combine='cbind') %do%{
      expanded
 } -> concatenated
 
-final = concatenated %>% group_by_all() %>% summarize(num_sims=length(beta2_1)) %>% ungroup() %>% mutate(parset = 1:nrow(.))
+final = concatenated %>% group_by_all() %>% 
+    summarize(num_sims=length(beta1_1)) %>% 
+    ungroup() %>% 
+    mutate(parset = 1:nrow(.))
 write.csv(final, file="final_points.csv") # File that specifies how many simulations to do
