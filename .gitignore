@@ -10,3 +10,10 @@ consolidated*.csv
 baseline*.csv
 endsip*.csv
 Inference/inference*/*.csv
+Forecasting/forecast*/
+.Rhistory
+.RData
+civis_projections/
+civis_data/
+scratch/
+mobility_covar_table.csv

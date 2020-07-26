@@ -1,0 +1,94 @@
+---
+title: "Renormalize contact matrices"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(foreach)
+
+# reference date from which all dates are calculated
+ref_date = as.Date('2020-01-14')
+sip_fall_start = as.Date('2020-03-16')
+sip_fall_end = as.Date('2020-03-22')
+
+load('IL_5metaregions_symmetric.RData')
+
+# Create nursing home contact matrix
+base = matrix(0, ncol=9, nrow=9)
+base[7, 7:9] = 0.0117 * 30
+base[8, 7:9] = 0.03159 * 30
+base[9, 7:9] = 0.11115 * 30
+
+scales = c(work=0.6, home=1, school=0, other=0.5)
+
+t_sip_fall_start = as.numeric(sip_fall_start - ref_date)
+num_days_fall = as.numeric(sip_fall_end - sip_fall_start) +1
+
+column_basenames = sort(names(pomp_contacts$all[1:81]))
+
+# Loop over each region
+foreach (reg=1:5, .combine='cbind')%do%{
+    
+    # Add in nursing home contact matrix to ALL
+    start = (reg - 1) * 80 + 1
+    allc = t(matrix(pomp_contacts$all[start : (start+80)], nrow=9))
+    
+    # Calculate normalizing constant
+    norm = rowSums(allc + base)
+
+    c_baseline = (allc + base)
+
+    # Get the contact matrix for each time assuming a linear fall with a start and end date
+    foreach (t=1:as.numeric(sip_fall_end - ref_date), .combine='rbind') %do%{
+        if (t < t_sip_fall_start){
+            c_t = c_baseline
+        } else{
+            deltaT = t - t_sip_fall_start + 1
+            frac_fall = deltaT/num_days_fall
+            temp_scales = 1 - (1-scales) * frac_fall
+            c_t = pomp_contacts$work[start : (start+80)] * temp_scales[['work']] + 
+                pomp_contacts$school[start : (start+80)] * temp_scales[['school']] +
+                pomp_contacts$home[start : (start+80)] * temp_scales[['home']] +
+                pomp_contacts$other[start : (start+80)] * temp_scales[['other']]
+            c_t = t(matrix(c_t, nrow=9)) + base
+            
+        }
+         
+        ct_norm = rowSums(c_t)
+        c_t = c_t / ct_norm[1]
+        
+        c(as.vector(t(c_t)))
+            
+    } -> regcontacts
+    
+    regcontacts = data.frame(regcontacts)
+    
+    names(regcontacts) = paste0(column_basenames, '_', reg)
+    
+    regcontacts
+} -> final_contacts_covar
+    
+final_contacts_covar$time = 1:as.numeric(sip_fall_end - ref_date)
+
+# Copy the values from the last row
+
+last_row = final_contacts_covar[rep(nrow(final_contacts_covar), 400),]
+
+rbind(final_contacts_covar, last_row) %>% 
+    mutate(time=1:nrow(.)) -> outdf
+
+write.csv(outdf, 'contacts_covar_table.csv', row.names=F)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

@@ -1,0 +1,61 @@
+---
+title: "Format mobility covariates"
+output: html_notebook
+---
+
+This notebook gets the mobility metrics into a covariate table. Note that we want these metrics to be proportional to transmission, so some need to be inverted in some way, for instance, fraction staying at home should be converted to fraction leaving home. I don't really know how to deal with home dwell time, so I am excluding that for now.
+
+Also, these mobility data only go up to June 21. The naive thing I'm doing is just extending those covariate values forward in time. 
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(foreach)
+
+# reference date from which all times are calculated
+ref_date = as.Date('2020-01-14')
+
+# Quick fix, assume Chicago has same scaling as Northeast, could refine
+region_order = c("North-Central", "Central", "Northeast", "Southern", "Northeast")
+
+load('processed_rr.RData')
+
+processed_rr = processed_rr %>% select(-`Avg Median Home Dwell Time`)
+
+metrics = names(processed_rr[3:7])
+renamed_metrics = c('fraction_leaving_home', 'fraction_fulltime', 'fraction_parttime', 'delivery', 'crowdedness')
+
+
+foreach (i=1:length(metrics), .combine='left_join') %do%{
+    metric = metrics[i]
+    metric_name = renamed_metrics[i]
+    
+
+    df = processed_rr %>%
+        select(date, restore_region, metric)
+    
+    if (metric_name == 'fraction_leaving_home')(
+        df = df %>% mutate(`% Completely at Home`=100-`% Completely at Home`)
+    )
+    df = df%>%
+        mutate(column_name = paste0(metric_name, '_', match(restore_region, region_order))) %>%
+        select(-restore_region) %>%
+        spread(column_name, metric)
+} -> covariates
+
+covariates = covariates %>%
+    mutate(time = as.numeric(as.Date(date) - ref_date)) %>%
+    filter(time > 0) %>%
+    select(-date)
+
+
+# Copy the values from the last row
+last_row = covariates[rep(nrow(covariates), 400),]
+
+rbind(covariates, last_row) %>% 
+    mutate(time=1:nrow(.)) -> outdf
+
+write.csv(outdf, 'mobility_covar_table.csv', row.names=F)
+
+```
