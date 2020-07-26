@@ -103,10 +103,13 @@ sim_full = simulate_pomp_covid(
 
 ## Process output
 alloutputs = process_pomp_covid_output(sim_full, agg_regions=F)
+
 pop_totals = as.numeric(lapply(FUN=sum, population_list))
+chicago_pop = pop_totals[5]
 pop_totals = pop_totals[1:4]
-pop_totals = c(pop_totals, sum(pop_totals))
-names(pop_totals) = c(region_order[1:4], 'Illinois')
+pop_totals = c(pop_totals, chicago_pop, sum(pop_totals))
+names(pop_totals) = c(region_order[1:4], 'chicago', 'Illinois')
+
 plotout = alloutputs$plotting_output %>% ungroup() %>%    
     mutate(Date=as.Date('2020-01-14') + Time)
 df_infections_summary <- plotout %>%

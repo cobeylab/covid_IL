@@ -43,8 +43,9 @@ population_filename_4 = 'Data/IL_population_southern.csv'
 population_filename_5 = 'Data/IL_population_chicago.csv'
 
 
-## Notes for projection pipeline
-
 ## need to modify projections to work in case of changepoint vs. nonchangepoint, i.e.
 
-projection_dir = paste0('./projections_', Sys.Date())
+projection_dir = paste0('./projections_', Sys.Date(), "/")
+final_projection_date = "2021-03-13"
+projection_functions = "Forecasting/projection_functions.R"
+model_name="baseline"
