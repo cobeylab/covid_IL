@@ -5,7 +5,7 @@ output: html_notebook
 
 This notebook gets the mobility metrics into a covariate table. Note that we want these metrics to be proportional to transmission, so some need to be inverted in some way, for instance, fraction staying at home should be converted to fraction leaving home. I don't really know how to deal with home dwell time, so I am excluding that for now.
 
-Also, these mobility data only go up to June 21. The naive thing I'm doing is just extending those covariate values forward in time. 
+Also, these mobility data only go up to June 21. The naive thing I'm doing is taking the mean of the last week of data and extending that forward in time. 
 
 ```{r}
 library(dplyr)
@@ -27,35 +27,69 @@ metrics = names(processed_rr[3:7])
 renamed_metrics = c('fraction_leaving_home', 'fraction_fulltime', 'fraction_parttime', 'delivery', 'crowdedness')
 
 
+## This loop puts the covariates into a wide format for pomp
 foreach (i=1:length(metrics), .combine='left_join') %do%{
     metric = metrics[i]
     metric_name = renamed_metrics[i]
-    
-
     df = processed_rr %>%
         select(date, restore_region, metric)
-    
+    ## Converts completely at home to leaving home
     if (metric_name == 'fraction_leaving_home')(
         df = df %>% mutate(`% Completely at Home`=100-`% Completely at Home`)
     )
+    normalization = df %>%
+        filter(date=='2020-03-01', restore_region=='Northeast') %>%
+        select(metric) %>%
+        unlist(use.names = F)
+    df[metric] = df[metric] / normalization
     df = df%>%
         mutate(column_name = paste0(metric_name, '_', match(restore_region, region_order))) %>%
         select(-restore_region) %>%
         spread(column_name, metric)
+    df[paste0(metric_name, '_5')] =  df[paste0(metric_name, '_3')]
+    df
 } -> covariates
 
+## Sets the time variable
 covariates = covariates %>%
     mutate(time = as.numeric(as.Date(date) - ref_date)) %>%
     filter(time > 0) %>%
     select(-date)
 
+# Take average of last week
+last_week = t(data.frame(colMeans(covariates[(nrow(covariates) - 7):nrow(covariates),])))
+row.names(last_week) = 1
 
-# Copy the values from the last row
-last_row = covariates[rep(nrow(covariates), 400),]
+## Copy the values from the average of the last week
+last_row = last_week[rep(1, 400), ]
 
+## Write out final table
 rbind(covariates, last_row) %>% 
     mutate(time=1:nrow(.)) -> outdf
-
 write.csv(outdf, 'mobility_covar_table.csv', row.names=F)
 
 ```
+
+Plot normalized crowdedness from March 1 onward, cut off high values for ease of viewing
+
+```{r}
+
+covariates %>%
+    select(time, paste0('crowdedness_',1:4)) %>%
+    gather(region, metric, 2:5) %>%
+    mutate(region = sapply(region, FUN=function(z){region_order[unlist(as.numeric(str_sub(z, -1)))]}),
+           date = ref_date + time) %>%
+    filter(date >= as.Date('2020-03-01')) -> plotdf
+
+ggplot(plotdf, aes(x=date, y=metric, color=region)) + 
+    geom_line(size=1) + 
+    ylab('Crowdedness relative to Northeast on March 1') +
+    ylim(0, 2) + # cutting off high values here
+    theme_bw()
+
+
+```
+
+Main takwaway here is that we may need to also think about an extra decrease in transmission after SIP is implemented that comes from social distancing measures and mask wearing behavior. I.e., there may be an extra reduction in transmission from other behaviors besides staying at home. In theory crowdedness captures the social distancing phenomenon to some extent, but not mask wearing. For reference, we infer something like a 66% in transmission reduction right now in the changepoint model (going from an R(t) of around 3 to a little below 1).  
+
+At the very least, we should figure out a good way to deal with the outliers in the northeast. It could be real, but also it could be bizarre. 
