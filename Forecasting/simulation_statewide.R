@@ -7,12 +7,11 @@ simulate_pomp_covid <- function(
   nsim, 
   input_params, 
   delta_t, 
-  contacts, 
   population_list, 
   beta_scales,
+  beta_covar,
+  contacts,
   frac_underreported,
-  gamma_table=NULL,
-  psi_table=NULL,
   seed = NULL,
   format = 'data.frame',
   rprocess_Csnippet,
@@ -26,18 +25,15 @@ simulate_pomp_covid <- function(
   
   # Initialize states
   subcompartment_df <- simulate_pomp_covid__init_subcompartment_df(input_params)
-  # Intervention df
-  intervention_df <- simulate_pomp_covid__init_intervention_df(input_params)
-  n_interventions <- nrow(intervention_df)
 
   # Set up parameters for pomp
   params <- simulate_pomp_covid__init_parameters(
-    n_age_groups, n_interventions, input_params, contacts, population_list
+    n_age_groups, input_params, population_list
   )
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, beta_scales, frac_underreported, gamma_table, psi_table
+    input_params, beta_scales, beta_covar, frac_underreported, contacts
   )
 
   covar_table <- covariate_table(
@@ -188,7 +184,7 @@ simulate_pomp_covid__init_state_names <- function(n_age_groups, n_regions, subco
 
 
 simulate_pomp_covid__init_parameters <- function(
-  n_age_groups, n_interventions, input_params, contacts, population_list
+  n_age_groups, input_params, population_list
 ) {
   with(input_params, {
     # Set up parameters for model
@@ -258,21 +254,32 @@ simulate_pomp_covid__init_parameters <- function(
     )
 
     # Region-specific parameters
-    params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4, beta2_5)
     params[paste0("region_non_hosp_", 1:n_regions)] = c(region_non_hosp_1, region_non_hosp_2, region_non_hosp_3, region_non_hosp_4, region_non_hosp_5)
-    params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4, num_init_5)       
-    
-    params[paste0("beta1_logit_",c(1:n_regions))] = unlist(input_params[paste0('beta1_logit_', c(1:n_regions))])
-    params[paste0("beta1_max_",c(1:n_regions))] = unlist(input_params[paste0('beta1_max_', c(1:n_regions))])
-    params[paste0("t_phase3_",c(1:n_regions))] = unlist(
-      unlist(input_params[paste0('t_phase3_', c(1:n_regions))])
-    )
-    params[paste0("t_phase3_max_",c(1:n_regions))] = unlist(
-      unlist(input_params[paste0('t_phase3_max_', c(1:n_regions))])
-    )
-    params[paste0("scale_phase3_",c(1:n_regions))] = unlist(
-      unlist(input_params[paste0('scale_phase3_', c(1:n_regions))])
-    )
+    params[paste0("num_init_",c(1:n_regions))] = c(num_init_1, num_init_2, num_init_3, num_init_4, num_init_5)           
+    params[paste0("beta1_",c(1:n_regions))] = unlist(input_params[paste0('beta1_', c(1:n_regions))])
+
+    if (use_changepoint){ # Only add these parameters if you're using a changepoint model
+      params[paste0("beta2_",c(1:n_regions))] = c(beta2_1, beta2_2, beta2_3, beta2_4, beta2_5)
+      params[paste0("t_phase3_",c(1:n_regions))] = unlist(
+        unlist(input_params[paste0('t_phase3_', c(1:n_regions))])
+      )
+      params[paste0("t_phase3_max_",c(1:n_regions))] = unlist(
+        unlist(input_params[paste0('t_phase3_max_', c(1:n_regions))])
+      )
+      params[paste0("scale_phase3_",c(1:n_regions))] = unlist(
+        unlist(input_params[paste0('scale_phase3_', c(1:n_regions))])
+      )
+      params[paste0("t_phase4_",c(1:n_regions))] = unlist(
+        unlist(input_params[paste0('t_phase4_', c(1:n_regions))])
+      )
+      params[paste0("t_phase4_max_",c(1:n_regions))] = unlist(
+        unlist(input_params[paste0('t_phase4_max_', c(1:n_regions))])
+      )
+      params[paste0("scale_phase4_",c(1:n_regions))] = unlist(
+        unlist(input_params[paste0('scale_phase4_', c(1:n_regions))])
+      )      
+    }
+
 
     # age and region
     for(i in c(1:n_regions)){
@@ -281,115 +288,18 @@ simulate_pomp_covid__init_parameters <- function(
     for(i in c(1:n_regions)){
       params[paste0(paste0("age_dist_",c(1:n_age_groups)),"_",i)] = input_params[sprintf('age_dist_%s_%s', c(1:n_age_groups), i)]
     }
-
-  # Contact parameters
-  for(k in c(1:n_regions)){
-    home_contact_vec_region <- array()
-    for(i in c(1:n_age_groups)){
-      for(j in c(1:n_age_groups)){
-        home_contact_vec_region[paste0("C_home_",j,"_",i)] = 0
-      }
-    }
-    home_contact_vec_region = home_contact_vec_region[!is.na(home_contact_vec_region)]
-    names(home_contact_vec_region) <- paste0(names(home_contact_vec_region), "_",k)
-    params = c(params, home_contact_vec_region)
-  }
-    
-    for(k in c(1:n_regions)){
-      work_contact_vec_region <- array()
-      for(i in c(1:n_age_groups)){
-        for(j in c(1:n_age_groups)){
-          work_contact_vec_region[paste0("C_work_",j,"_",i)] = 0
-        }
-      }
-      work_contact_vec_region = work_contact_vec_region[!is.na(work_contact_vec_region)]
-      names(work_contact_vec_region) <- paste0(names(work_contact_vec_region), "_",k)
-      params = c(params, work_contact_vec_region)
-    }
-    
-    for(k in c(1:n_regions)){
-      school_contact_vec_region <- array()
-      for(i in c(1:n_age_groups)){
-        for(j in c(1:n_age_groups)){
-          school_contact_vec_region[paste0("C_school_",j,"_",i)] = 0
-        }
-      }
-      school_contact_vec_region = school_contact_vec_region[!is.na(school_contact_vec_region)]
-      names(school_contact_vec_region) <- paste0(names(school_contact_vec_region), "_",k)
-      params = c(params, school_contact_vec_region)
-    }
-    
-    for(k in c(1:n_regions)){
-      other_contact_vec_region <- array()
-      for(i in c(1:n_age_groups)){
-        for(j in c(1:n_age_groups)){
-          other_contact_vec_region[paste0("C_other_",j,"_",i)] = 0
-        }
-      }
-      other_contact_vec_region = other_contact_vec_region[!is.na(other_contact_vec_region)]
-      names(other_contact_vec_region) <- paste0(names(other_contact_vec_region), "_",k)
-      params = c(params, other_contact_vec_region)
-    }
-    
-    
-    params[grep("C_home_",names(params))] = contacts$home
-    params[grep("C_work_",names(params))] = contacts$work
-    params[grep("C_school_",names(params))] = contacts$school
-    params[grep("C_other_",names(params))] = contacts$other
     
     params
   })
 }
 
-simulate_pomp_covid__init_intervention_df <- function(input_params) {
-  # Generate intervention data frame 
-
-  with(input_params, {
-    
-    intervention_df = data.frame(
-        t_start = c(t_start), # t_start and t_end are vectors that have one value for each distinct intervention
-        t_end = c(t_end))   
-      for(i in c(1:n_regions)){
-        intervention_df[,paste0("scale_work_",i)] <- scalework[[i]] ## scalework is a list of length n_regions. Each list item is a region-specific vector with one value for each distinct intervention. 
-      }
-      for(i in c(1:n_regions)){
-        intervention_df[,paste0("scale_home_",i)] <- scalehome[[i]]
-      }
-      for(i in c(1:n_regions)){
-        intervention_df[,paste0("scale_school_",i)] <- scaleschool[[i]]
-      }
-      for(i in c(1:n_regions)){
-        intervention_df[,paste0("scale_other_",i)] <- scaleother[[i]]
-      }
-    intervention_df
-  }) -> intervention_df
-  intervention_df
-}
-
 simulate_pomp_covid__init_covariate_table <- function(input_params, 
-  intervention_df, 
-  beta_scales, 
+  beta_scales,
+  beta_covar,
   frac_underreported,
-  gamma_table,
-  psi_table) {
-  n_interventions <- nrow(intervention_df)
-  
-    # Specify interventions via covariate table 
-    name_vec <- names(intervention_df %>% select(contains("scale")))
+  contacts) {
     
-    covar_table_interventions <- data.frame(time = c(1:input_params$tmax),
-                                            use_post_intervention_beta = 0)
-    for(i in c(1:length(name_vec))){
-      covar_table_interventions[,name_vec[i]] = 1
-    }
-    for(i in c(1:nrow(intervention_df))){
-      for(j in c(1:length(name_vec))){
-        covar_table_interventions[covar_table_interventions$time >= intervention_df[i,]$t_start & covar_table_interventions$time < intervention_df[i,]$t_end, names(covar_table_interventions) == name_vec[j]] = intervention_df[i, names(intervention_df) == name_vec[j]] 
-      }
-    }
-  covar_table_interventions[covar_table_interventions$time >= intervention_df[1,]$t_start, 'use_post_intervention_beta'] = 1
-  
-  covar_table_interventions$add_noise_to_beta = beta_scales[covar_table_interventions$time, 'add_noise_to_beta']
+    covar_table_interventions <- data.frame(time = c(1:input_params$tmax))
   
   for (region in 1:input_params$n_regions){
       col = paste0('frac_underreported_',region)
@@ -400,16 +310,16 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
       covar_table_interventions[[col_se]] = frac_underreported[covar_table_interventions$time, col_se]
   }
 
-  for (region in 1:input_params$n_regions){
-      col = paste0('scale_beta_',region)
-      covar_table_interventions[[col]] = beta_scales[covar_table_interventions$time, col]
-  }
+  if (!is.null(beta_scales)){
 
-  if (!is.null(gamma_table)){
-      covar_table_interventions = left_join(covar_table_interventions, gamma_table, by='time')
+    for (region in 1:input_params$n_regions){
+        col = paste0(beta_covar, '_', region)
+        model_colname = paste0('scale_beta_', region)
+        covar_table_interventions[[model_colname]] = beta_scales[covar_table_interventions$time, col]
+    }
   }
-  if (!is.null(psi_table)){
-      covar_table_interventions = left_join(covar_table_interventions, psi_table, by='time')
+  if (!is.null(contacts)){
+      covar_table_interventions = left_join(covar_table_interventions, contacts, by='time')
   }
   covar_table_interventions
 }
@@ -452,7 +362,8 @@ process_pomp_covid_output <- function(sim_result, agg_regions=T) {
       startsWith(as.character(Compartment), "new_hospitalizations") ~ 'new_hospitalizations',
       startsWith(as.character(Compartment), "new_symptomatic") ~ "nS",
       startsWith(as.character(Compartment), "ObsICU") ~ "ObsICU",
-      startsWith(as.character(Compartment), "ObsHosp") ~ "ObsHosp"
+      startsWith(as.character(Compartment), "ObsHosp_") ~ "ObsHosp",
+      startsWith(as.character(Compartment), "ObsHospDeaths_") ~ "ObsHospDeaths",
   )
   ) -> df_sim_output
 
@@ -775,29 +686,6 @@ get_scale_linear_special = function(
     row.names(raw_scales) = raw_scales$time
     raw_scales
     
-}
-
-add_interventions = function(intervention_file, parameters){
-  stopifnot(require(foreach))
-  pars <- parameters
-
-  # Add the intervention starts and ends
-  interventions = read.csv(intervention_file) %>% arrange(t_start, region)
-  pars$t_start = unique(interventions$t_start)
-  pars$t_end = unique(interventions$t_end)
-  
-  # Add in scalings
-  interventions = interventions %>% group_by(region, t_start) %>% 
-    summarise(scalework=median(scalework), scaleschool=median(scaleschool), scalehome=median(scalehome), scaleother=median(scaleother)) %>%
-    ungroup()
-  for(location in c('scalework','scaleschool','scalehome','scaleother')){
-    foreach(r=1:pars$n_regions) %do% {
-    temp = interventions %>% filter(region==r) %>% arrange(t_start)
-    temp[[location]]
-    } -> scales
-    pars[[location]] = scales
-  }
-  return(pars)
 }
 
 

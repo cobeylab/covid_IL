@@ -10,6 +10,7 @@ make_pomp_object_covid <- function(
   contacts, 
   population_list, 
   beta_scales,
+  beta_covar,
   frac_underreported,
   fitstart,
   dmeasure_Csnippet,
@@ -18,8 +19,6 @@ make_pomp_object_covid <- function(
   time_column,
   transformations,
   rinit_Csnippet,
-  gamma_table=NULL,
-  psi_table=NULL,
   inherit_parameters=TRUE,
   format = 'data.frame',
   obsnames = NULL,
@@ -29,10 +28,7 @@ make_pomp_object_covid <- function(
   print('Making subcompartments')
   # Initialize states
   subcompartment_df <- simulate_pomp_covid__init_subcompartment_df(input_params)
-  # Intervention df
-  intervention_df <- simulate_pomp_covid__init_intervention_df(input_params)
-  n_interventions <- nrow(intervention_df)
-  
+
   if (inherit_parameters)
   {
     params <- inherited_params
@@ -40,14 +36,14 @@ make_pomp_object_covid <- function(
   } else{
     # Set up parameters for pomp
     params <- simulate_pomp_covid__init_parameters(
-      n_age_groups, n_interventions, input_params, contacts, population_list
+      n_age_groups, input_params, population_list
     )
     print('params initialized')
   }
 
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
-    input_params, intervention_df, beta_scales, frac_underreported, gamma_table, psi_table
+    input_params, beta_scales, beta_covar, frac_underreported, contacts
   )
 
   covar_table <- covariate_table(
@@ -55,11 +51,8 @@ make_pomp_object_covid <- function(
     order = "constant",
     times = "time"
   )
-
 print('covars initialized')
-  # Actually call pomp
-  model_path <- covid_get_path('POMP/model_scripts/statewide')
- 
+
   ## Set up state variables by age group and then by regions 
   state_names <- simulate_pomp_covid__init_state_names(n_age_groups, n_regions, subcompartment_df)
   
