@@ -86,6 +86,8 @@ civis_data = read.csv(data_filename)  %>%
     mutate(Date=as.Date(date), 
         total_deaths = hosp_deaths+nonhosp_deaths)
 
+stopifnot('emr_deaths' %in% names(civis_data))
+
 get_idph = function(date, region){
     idph[which(idph$Date==date & idph$restore_region==region), 'total_deaths']
 }
@@ -105,14 +107,14 @@ df = civis_data %>% mutate(
     mutate(confirmed_covid_icu = predict(loess(confirmed_covid_icu ~ time, span=0.75), time),
            total_deaths = predict(loess(total_deaths ~ time, span=0.75), time),
            covid_non_icu = predict(loess(covid_non_icu ~ time, span=0.75), time),
-           hosp_deaths = predict(loess(hosp_deaths ~ time, span=0.75), time),
+           emr_deaths = predict(loess(emr_deaths ~ time, span=0.75), time),
            date=Date) %>%
     ungroup() %>%
-    select(restore_region, confirmed_covid_icu, covid_non_icu, total_deaths, hosp_deaths, date) %>%
+    select(restore_region, confirmed_covid_icu, covid_non_icu, total_deaths, emr_deaths, date) %>%
     mutate(confirmed_covid_icu = if_else(confirmed_covid_icu < 0, 0, round(confirmed_covid_icu)),
            total_deaths = if_else(total_deaths < 0, 0, round(total_deaths)),
            covid_non_icu = if_else(covid_non_icu < 0, 0, round(covid_non_icu)),
-           hosp_deaths = if_else(hosp_deaths < 0, 0, round(hosp_deaths)))
+           emr_deaths = if_else(emr_deaths < 0, 0, round(emr_deaths)))
 
 
 df_ICU = df %>% select(date, restore_region, confirmed_covid_icu) %>% 
@@ -133,15 +135,15 @@ df_hosp = df %>%
     select(date, region_order)
 names(df_hosp) = c('time', paste0('ObsHosp_', 1:pars$n_regions))
 
-df_hosp_deaths = df %>% 
-    select(date, restore_region, hosp_deaths) %>% 
-    spread(restore_region, hosp_deaths) %>% 
+df_emr_deaths = df %>% 
+    select(date, restore_region, emr_deaths) %>% 
+    spread(restore_region, emr_deaths) %>% 
     select(date, region_order)
-names(df_hosp_deaths) = c('time', paste0('ObsHospDeaths_', 1:pars$n_regions))
+names(df_emr_deaths) = c('time', paste0('ObsHospDeaths_', 1:pars$n_regions))
 
 data = left_join(df_death, df_ICU, by='time')
 data = left_join(data, df_hosp, by='time')
-data = left_join(data, df_hosp_deaths, by='time')
+data = left_join(data, df_emr_deaths, by='time')
 data$time = as.numeric(as.Date(data$time) - as.Date(t_ref))
 
 stopifnot(max(data$time) >= simend)

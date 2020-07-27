@@ -3,12 +3,12 @@ partitionspec="-p cobey"
 covidspec="-p broadwl-lc" #"-p broadwl --qos=covid-19 --account=covid-19"
 
 # First, copy over linelist data
-cp /project2/cobey/covid-civis/processed_data/emr_linelist_fitting_data.csv ./
+#cp /project2/cobey/covid-civis/processed_data/emr_linelist_fitting_data.csv ./
 
 # Then, run script to process public linelist data
-module load Anaconda3
-python 0.process_county_data.py
-
+#module load Anaconda3
+#python util.process_county_data.py
+#module unload Anaconda3
 
 export ncores=4
 export maxjobs=4

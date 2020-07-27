@@ -41,6 +41,7 @@ region_to_test=-1
 source(covid_get_path(inference_file))
 source('set_up_covariates_and_data.R')
 pars$region_to_test = region_to_test
+pars$tmin = simstart
 
 ## Reformat civis data
 
@@ -71,7 +72,7 @@ civis_data = civis_data %>% mutate(
 IL_civis = civis_data %>%
     filter(restore_region != 'chicago') %>%
     group_by(date, Date, source, source_hosp_deaths) %>%
-    summarize(hosp_deaths = sum(hosp_deaths),
+    summarize(emr_deaths = sum(emr_deaths),
               nonhosp_deaths = sum(nonhosp_deaths),
               confirmed_covid_icu = sum(confirmed_covid_icu),
               total_deaths=sum(total_deaths),
@@ -146,18 +147,18 @@ foreach(rnum=1:6) %do%{
 
     civisplot = civis_data %>% 
         mutate(deaths=total_deaths) %>%
-        gather(Compartment, Cases, deaths, confirmed_covid_icu, confirmed_covid_nonicu, hosp_deaths, nonhosp_deaths, incident_hospitalizations) %>% 
+        gather(Compartment, Cases, deaths, confirmed_covid_icu, confirmed_covid_nonicu, emr_deaths, nonhosp_deaths, incident_hospitalizations) %>% 
         filter(restore_region==region_to_plot) %>%
         mutate(source=case_when((Compartment=='confirmed_covid_icu') ~ 'emresource',
                                 (Compartment=='deaths') ~ source,
-                                (Compartment=='hosp_deaths') ~ as.character(source_hosp_deaths),
+                                (Compartment=='emr_deaths') ~ 'emresource',
                                 (Compartment=='nonhosp_deaths') ~ 'IDPH line list',
                                 (Compartment=='incident_hospitalizations') ~ 'IDPH line list',
                                 (Compartment=='confirmed_covid_nonicu') ~ 'emresource')) %>%
         mutate(Compartment=case_when((Compartment=='deaths')~'All reported deaths',
                                      (Compartment=='confirmed_covid_icu')~'Confirmed ICU cases',
                                      (Compartment=='nonhosp_deaths')~'Non-hospital deaths',
-                                     (Compartment=='hosp_deaths')~'Hospitalized deaths',
+                                     (Compartment=='emr_deaths')~'Hospitalized deaths',
                                      (Compartment=='incident_hospitalizations') ~ 'Incident hospitalizations',
                                      (Compartment=='confirmed_covid_nonicu') ~ 'Confirmed non-ICU hospital cases' ))
 

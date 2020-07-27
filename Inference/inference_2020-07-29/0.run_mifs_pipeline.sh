@@ -2,7 +2,7 @@
 partitionspec="-p cobey"
 covidspec="-p broadwl --qos=covid-19 --account=covid-19"
 
-# First, copy over linelist data
+# First, copy over linelist data. Needs to have the emr_deaths column.
 cp /project2/cobey/covid-civis/processed_data/emr_linelist_fitting_data.csv ./
 
 # Then, run script to process public linelist data

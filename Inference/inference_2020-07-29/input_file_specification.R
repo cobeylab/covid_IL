@@ -9,9 +9,9 @@ n_mif = 2
 n_particles_mif = 2
 n_particles_pfilter = 2
 
-data_filename = './emr_linelist_fitting_data.csv' # Location of linelist data
-idph_filename = './incident_idph_regions.csv' # Location of IDPH public data broken down by region
-beta_covariate_file = 'Data/mobility_covar_table.csv' # CSV that contains columns for the time and each of the covariates that you want to use
+# CSV that contains columns for the time and each of the covariates that you want to use
+# Note that the filepath should be specified RELATIVE to the covid_IL directory.
+beta_covariate_file = 'Data/mobility_covar_table.csv' 
 
 ### Shouldn't need to change anything below this point ###
 
@@ -21,6 +21,8 @@ min_data_time = '2020-03-16'
 intervention_start='2020-03-16'
 min_data_time_ICU = '2020-04-07'
 
+data_filename = './emr_linelist_fitting_data.csv' # Location of linelist data
+idph_filename = './incident_idph_regions.csv' # Location of IDPH public data broken down by region
 dmeasFile = 'Inference/dmeasure.c'
 init_file='Inference/initializer.c'
 if (use_changepoint){

@@ -1,106 +1,281 @@
+library(foreach)
+library(doParallel)
 library(dplyr)
 library(tidyr)
-library(foreach)
+library(matlib)
 
-dir.create(file.path(projection_dir), showWarnings = FALSE)
+jacobian=function(states, elist, pts){
+    
+    k=0
+    jl=list(NULL)
+    for(i in 1:length(states)){
+        assign(paste("jj", i, sep = "."), lapply(lapply(elist, deriv, states[i]), eval, pts))
+        for(j in 1:length(states)){
+            k=k+1
+            jl[[k]]=attr(eval(as.name(paste("jj", i, sep=".")))[[j]], "gradient")[1,]
+        }
+    }
+    
+    J=matrix(as.numeric(as.matrix(jl)[,1]), ncol=length(states))
+    return(J)
+}
+
+get_beta_from_covar = function(input_params, beta_covariate_file, beta_covariate_column){
+    covar_table = read.csv(covid_get_path(beta_covariate_file))
+    row.names(covar_table) = covar_table$time
+    times = covar_table$time
+    foreach(region=1:5, .combine='cbind') %do%{
+        input_params[[paste0('beta1_', region)]] * covar_table[, paste0(beta_covariate_column, '_',region)]
+    } -> temp
+    temp = data.frame(temp)
+    row.names(temp) = times
+    names(temp) = 1:5
+    temp
+}
+ 
+get_beta_from_parameters = function(input_params){
+    t_sip = 62
+    foreach(region=1:5, .combine='cbind') %do%{
+        t_phase3_max = input_params[[paste0('t_phase3_max_', region)]]
+        t_phase4_max = input_params[[paste0('t_phase4_max_', region)]]
+
+        scale_phase3 = input_params[[paste0('scale_phase3_', region)]]
+        scale_phase4 = input_params[[paste0('scale_phase4_', region)]]
+
+        t_phase3 = input_params[[paste0('t_phase3_', region)]]
+        t_phase4 = input_params[[paste0('t_phase4_', region)]] 
+
+        beta1 = input_params[[paste0('beta1_', region)]]
+        beta2 = input_params[[paste0('beta2_', region)]]
+
+        foreach (t = 1:500, .combine='rbind') %do%{
+            if (t < t_sip){
+                beta = beta1
+            } else if (t < t_phase3){
+                t_coord = t - t_sip + 1
+                slope = (beta1 - beta2) / 7
+                beta = if_else(t_coord < 7, beta1 - slope * t_coord, beta2)
+            } else if (t < t_phase4){
+                phase3_slope = (scale_phase3 * beta2) / (t_phase3_max - t_phase3)
+                transmission_phase3 = beta2 + phase3_slope * (t - t_phase3)
+                transmission_phase3_max = beta2 + phase3_slope * (t_phase3_max - t_phase3)
+                beta = if_else(t >= t_phase3_max, transmission_phase3_max, transmission_phase3)
+            } else{
+                phase4_change = scale_phase4 - scale_phase3
+                phase4_starting_point = beta2 * (1 + scale_phase3)
+                phase4_slope = phase4_change / (t_phase4_max - t_phase4)
+                transmission_phase4 = phase4_starting_point + phase4_slope * (t - t_phase4)
+                transmission_phase4_max = phase4_starting_point + phase4_slope * (t_phase4_max - t_phase4)
+                beta = if_else(t >= t_phase4_max, transmission_phase4_max, transmission_phase4)
+            }
+            beta
+        } -> new_scalings  
+    } ->temp
+    temp = data.frame(temp)
+    row.names(temp) = 1:500
+    names(temp) = 1:5
+    return(temp)
+}
+
+get_foi_string <- function(scaled_beta,
+                t,
+                ag, 
+                region_num,
+                population,
+                q_vec,
+                contact_covars) {
+    foi_string = list()
+    for (jj in seq(1, 9)){
+        C_val = contact_covars[t, sprintf('C_%s_%s_%s', ag, jj, region_num)]
+        infectious = sprintf("(%s+%s+%s+%s)", paste0('P', jj), paste0('A', jj), paste0('IM', jj), paste0('IS', jj))
+        foi = sprintf("(%s * %s * %s * %s / %s)", q_vec[ag], scaled_beta, C_val, infectious, population[jj, 'POPULATION'])
+        foi_string[jj] = foi
+    }
+    
+    paste(foi_string, collapse="+")
+}
+
+
+calculate_phi <- function(rho, kappa, psi1, psi2, frac_nonhosp_deaths){
+    1 - ((kappa * (1 - psi1 - psi2) * frac_nonhosp_deaths) / ((1 - frac_nonhosp_deaths) * (1 - kappa)))
+}
+
+get_R0 <- function(region_name, beta_value,
+                   pop,
+                   paras, fnhd,
+                   t,
+                   contacts){
+
+    region = match(region_name, region_names)
+    paras$phi = calculate_phi(rho = as.numeric(paras$rho),
+                                kappa=paras$kappa,
+                                psi1=paras$psi1,
+                                psi2=paras$psi2,
+                                frac_nonhosp_deaths = fnhd[region])
+
+    # Set up disease-free equilibrium
+    deq = list()
+    for (age_group in seq(1, 9)){
+        deq[paste0('S', age_group)] = pop[age_group, 'POPULATION']
+        deq[paste0('A', age_group)] = 0
+        deq[paste0('E', age_group)] = 0
+        deq[paste0('P', age_group)] = 0
+        deq[paste0('IM', age_group)] = 0
+        deq[paste0('IS', age_group)] = 0
+    }
+
+        # Generate expressions for the F matrix. Each entry describes the flow of NEWLY infected people into each infected class, so for our model, this only includes E.
+        F_matrix = c()
+        for (ag in seq(1, 9)){
+            
+
+             with(paras, {
+                foi_string = get_foi_string(scaled_beta=beta_value, t=t, ag=ag, region_num=region, population=pop, q_vec=qq, contact_covars=contacts)
+                dE = parse(text=sprintf("(%s) * S%s", foi_string, ag))
+                dA = parse(text="0")
+                dP = parse(text="0")
+                dIM = parse(text="0")
+                dIS = parse(text="0")
+                l = list(E=dE, A=dA, P=dP, IM=dIM, IS=dIS)
+                names(l) = paste0(names(l),ag)
+                l
+            }) -> elist_temp
+           F_matrix = c(F_matrix, elist_temp)
+        }
+        
+        # Generate expressions for the V matrix. Each entry describes the flow between infectected compartments. Includes E. Does NOT include the generation of new infections.
+        V_matrix = c()
+        for (ag in seq(1, 9)){
+             with(paras, {
+                foi_string = get_foi_string(scaled_beta=beta_value, t=t, ag=ag, region_num=region, population=pop, q_vec=qq, contact_covars=contacts)
+                dE = parse(text=sprintf("-%s * E%s", sigma[ag], ag))
+                dA = parse(text=sprintf("%s * %s * E%s - %s * A%s", rho[ag], sigma[ag], ag, eta[ag], ag))
+                dP = parse(text=sprintf("(1-%s) * %s * E%s - %s * P%s", rho[ag], sigma[ag], ag, zeta_s[ag], ag))
+                dIM = parse(text=sprintf("(1-%s) * %s * P%s - IM%s * (%s * %s + (1-%s) * %s)", kappa[ag], zeta_s[ag], ag, ag, phi[ag], gamma_m[ag], phi[ag], mu_m[ag]))
+                dIS = parse(text=sprintf("%s * %s * P%s - %s * IS%s", kappa[ag], zeta_s[ag] , ag, zeta_h[ag], ag))
+                
+                l = list(E=dE, A=dA, P=dP, IM=dIM, IS=dIS)
+                names(l) = paste0(names(l),ag)
+                l
+            }) -> elist_temp
+           V_matrix = c(V_matrix, elist_temp)
+        }
+        
+        # To evaluate at the disease-free equilibrium, i.e. to compute R0.
+        JJ_F=jacobian(states=names(F_matrix), elist=F_matrix, pts=deq)
+        JJ_V=jacobian(states=names(V_matrix), elist=V_matrix, pts=deq)
+        
+        R0 = eigen(JJ_F %*% -inv(JJ_V))$values[1]
+        R0
+}
+
+
 
 root <- '../../'
 source(file.path(root, '_covid_root.R'))
 covid_set_root(root)
-source(covid_get_path('Forecasting/simulation_statewide.R'))
-source(covid_get_path('Forecasting/R0_functions.R'))
+
 source('./input_file_specification.R')
-region_order = c('northcentral','central','northeast','southern', 'chicago')
-
 default_par_file = './final_mle_pars.csv'
-fit_df = read.csv('./final_points.csv')
+output_dir = projection_dir
+source(covid_get_path(inference_file))
+source('set_up_covariates_and_data.R')
 
-output_file = paste0(projetion_dir,'/R0_over_time.csv')
 
-load(contact_filename)
-### User-specification of parameters and interventions for model 
-par_frame = read.csv(default_par_file)
-pars = as.numeric(par_frame$value)
-names(pars) = par_frame$param_name
-betamax = pars[['beta1_max_1']]
-
-pars = as.list(pars)
-population1 = read.csv(population_filename_1)
-colnames(population1) <- c("AGE_GROUP_MIN", "POPULATION")
-population2 = read.csv(population_filename_2)
-colnames(population2) <- c("AGE_GROUP_MIN", "POPULATION")
-population3 = read.csv(population_filename_3)
-colnames(population3) <- c("AGE_GROUP_MIN", "POPULATION")
-population4 = read.csv(population_filename_4)
-colnames(population4) <- c("AGE_GROUP_MIN", "POPULATION")
-population5 = read.csv(population_filename_5)
-colnames(population5) <- c("AGE_GROUP_MIN", "POPULATION")
-n_age_groups = nrow(population1)
-
-# ASSUME FOLLOWING ORDER: NORTH-CENTRAL, CENTRAL, NORTHEAST, SOUTHERN 
-population_list=list(population1, population2, population3, population4, population5)   
-
- pop_totals = as.numeric(lapply(FUN=sum, population_list))
+pop_totals = as.numeric(lapply(FUN=sum, population_list))
     chicago_pop = pop_totals[5]
     pop_totals = pop_totals[1:4]
     pop_totals = c(pop_totals, chicago_pop, sum(pop_totals))
     names(pop_totals) = c(region_order[1:4], 'chicago', 'Illinois')
 
-foreach (parset_id=1:max(fit_df$parset), .combine='rbind') %do%{
-    pars_to_use = fit_df %>% filter(parset == parset_id) %>% unlist(use.names=T)
-    pars[names(pars_to_use)] = pars_to_use
+pop_fracs = pop_totals / pop_totals[['Illinois']]
+pop_fracs = pop_fracs[1:4]
+
+par_frame = read.csv(default_par_file)
+pars = as.numeric(par_frame$value)
+names(pars) = par_frame$param_name
+pars = as.list(pars)
+
+parsets = read.csv('./final_points.csv')
+
+contacts = pomp_contacts
+fnhd = as.numeric(pars[paste0('region_non_hosp_', seq(1, 5))])
+
+# Get region number
+region_names = c('restore_northcentral', 'restore_central','restore_northeast','restore_southern', 'chicago')
+
+
+
+
+R0_pars <- list(
+        sigma = rep(1/pars$inv_sigma, 9),
+        eta = rep(1/pars$inv_eta, 9),
+        zeta_s = rep(1/pars$inv_zeta_s, 9),
+        zeta_h= rep(1/pars$inv_zeta_h, 9),
+        mu_m = rep(1/pars$inv_mu_m, 9),
+        gamma_m = rep(1/pars$inv_gamma_m, 9),
+        kappa = as.numeric(pars[paste0('kappa_', seq(1, 9))]),
+        rho = as.numeric(pars[paste0('rho_', seq(1, 9))]),
+        psi1 = as.numeric(pars[paste0('psi1_', seq(1, 9))]),
+        psi2 = as.numeric(pars[paste0('psi2_', seq(1, 9))]),
+        qq=as.numeric(pars[paste0('q_', seq(1, 9))]),
+        f_nurse=c(0,0,0,0,0,0,0.0117,0.03159,0.11115))
+
+
+
+cl <- makeCluster(28)
+registerDoParallel(cl)
+
+tmin = simstart
+tmax = as.numeric(Sys.Date() - as.Date(t_ref))
+tstartloop = Sys.time()
+foreach (parset=1:nrow(parsets), .combine='rbind') %do%{
     
-    # Read in parameters
-    R0_pars <- list(
-                sigma = rep(1/pars$inv_sigma, 9),
-                eta = rep(1/pars$inv_eta, 9),
-                zeta_s = rep(1/pars$inv_zeta_s, 9),
-                zeta_h= rep(1/pars$inv_zeta_h, 9),
-                mu_m = rep(1/pars$inv_mu_m, 9),
-                gamma_m = rep(1/pars$inv_gamma_m, 9),
-                kappa = as.numeric(pars[paste0('kappa_', seq(1, 9))]),
-                rho = as.numeric(pars[paste0('rho_', seq(1, 9))]),
-                psi1 = as.numeric(pars[paste0('psi1_', seq(1, 9))]),
-                psi2 = as.numeric(pars[paste0('psi2_', seq(1, 9))]),
-                qq=as.numeric(pars[paste0('q_', seq(1, 9))]),
-                f_nurse=c(0,0,0,0,0,0,0.0117,0.03159,0.11115))
-
-
-    R0_regions = c('restore_northcentral', 'restore_central','restore_northeast','restore_southern', 'chicago')
-    fnhd = as.numeric(pars[paste0('region_non_hosp_', seq(1, 5))])
-    R0_scales_reg = c(0.1, 0.2, 0.05, 0.2, 0.05)
-
-    foreach (regionnum=1:length(R0_regions), .combine='rbind') %do%{
-        region = R0_regions[regionnum]
-        b_pre = pars[[paste0('beta1_logit_', regionnum)]] * betamax
-        b_post = pars[[paste0('beta2_',regionnum)]]
-        b_eld = pars$b_elderly
-        pre_int = get_R0(region, b_pre, b_eld, b_young=1,as.Date('2020-03-01'), R0_pars, fnhd)
+    # reassign parameters
+    for(n in names(parsets)){
+        pars[[n]] = parsets[parset, n]
+    }
+    
+    # Calculate betas
+    if (use_changepoint){
+       betas = get_beta_from_parameters(pars) 
+    } else{
+        betas = get_beta_from_covar(pars, beta_covariate_file=beta_covariate_file, beta_covariate_column=beta_covariate_column)
+    }
         
-        R0_diff = ((pre_int - post_int) * R0_scales_reg[regionnum] + post_int) / post_int
+    foreach(rnum=1:5, .combine = 'rbind') %do%{
+        # Calculate R0 for each timepoint and region
+        foreach(time=tmin:tmax, .combine='rbind', 
+            .packages=c('dplyr','matlib')) %dopar%{
+            scaled_beta = betas[time, rnum]
 
-        c(pre_int_R0=as.numeric(pre_int),
-            post_int_R0=as.numeric(post_int),
-            phase3_scale = 1 + pars[[paste0('scale_phase3_', regionnum)]],
-            phase4_scale=R0_diff)
+            R0 = Re(get_R0(region_name=region_names[rnum],
+               pop = population_list[[rnum]],
+               beta_value = scaled_beta,
+               paras=R0_pars, 
+               fnhd=fnhd,
+               t=time,
+               contacts=contacts))
+            c(time, R0, rnum, parset)
+        } -> R0_vals
+        R0_vals = data.frame(R0_vals)
+        names(R0_vals) = c('time','R0','Region','parset')
+        last_row = R0_vals[rep(nrow(R0_vals), 300), ]
+        rbind(R0_vals, last_row) %>% 
+            mutate(time=tmin:(tmin+nrow(.) -1))     
+    } -> R0_consolidated
+    R0_consolidated = data.frame(R0_consolidated)
 
-    } -> R0_values
+    R0_consolidated
+} -> final_R0
+print(Sys.time()-tstartloop)
 
-    R0_values = as_tibble(R0_values) %>% 
-        mutate(restore_region = str_replace(R0_regions, "restore_",""),
-               pop_frac = as.numeric(pop_totals[restore_region]/pop_totals['Illinois']))
+IL_R = final_R0 %>% 
+    group_by(time, parset) %>% 
+    filter(Region!=5) %>% 
+    summarize(R0=sum(R0*pop_fracs[Region])) %>% 
+    ungroup() %>% 
+    mutate(Region=0)
 
-    R0_no_chicago = R0_values %>% filter(restore_region != 'chicago')
-
-    IL_phase4= sum(as.numeric(R0_no_chicago$phase4_scale) * as.numeric(R0_no_chicago$pop_frac))
-    IL_phase3 = sum(as.numeric(R0_no_chicago$phase3_scale) * as.numeric(R0_no_chicago$pop_frac))
-    IL_pre = sum(R0_no_chicago$pre_int_R0 * R0_no_chicago$pop_frac)
-    IL_post = sum(R0_no_chicago$post_int_R0 * R0_no_chicago$pop_frac)
-
-    R0_values = rbind(R0_values, c(pre_int_R0=IL_pre, post_int_R0=IL_post,  phase3_scale=IL_phase3, phase4_scale=IL_phase4, restore_region='Illinois',  pop_frac=1))
-    R0_values = as.data.frame(R0_values)
-    R0_values$parset = parset_id
-    R0_values
-} ->final_R0
-
-write.csv(final_R0, output_file, row.names=F)
+final_R0 = rbind(final_R0, IL_R)
+write.csv(final_R0, paste0(projection_dir, 'R0_values.csv'), row.names=F)

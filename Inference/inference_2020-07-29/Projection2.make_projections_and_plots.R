@@ -22,16 +22,21 @@ covid_set_root(root)
 default_par_file = './final_mle_pars.csv'
 fit_df = read.csv('./final_points.csv')
 
+
 source("./input_file_specification.R") # script to read in necessary files
 output_dir = projection_dir
 source(covid_get_path(inference_file))
 source("./set_up_covariates_and_data.R")
 source(covid_get_path(projection_functions))
 
+
 # Projection specifications: all projections
 reference_date <- as.Date(t_ref) # All numeric times in reference to this date
 end_projection_date <- Sys.Date()
 start_projection_date <- simstart + reference_date
+
+R0_values = read.csv(paste0(projection_dir, 'R0_values.csv')) %>%
+  mutate(Date=reference_date+time, Region=as.character(Region))
 
 deltaT = 0.1 # timestep for projections  
 
@@ -61,7 +66,7 @@ civis_data = civis_data %>% mutate(
 IL_civis = civis_data %>%
     filter(restore_region != 'chicago') %>%
     group_by(date, Date, source, source_hosp_deaths) %>%
-    summarize(hosp_deaths = sum(hosp_deaths),
+    summarize(emr_deaths = sum(emr_deaths),
               nonhosp_deaths = sum(nonhosp_deaths),
               confirmed_covid_icu = sum(confirmed_covid_icu),
               total_deaths=sum(total_deaths),
@@ -218,8 +223,8 @@ for (parset_id in 1:max(fit_df$parset)){
         plotout = bind_rows(plotout, statewide, chicago_out) %>% filter(!is.na(Compartment))
         plotout$parset = parset_id
         
-        #Rtdf = add_R0_to_output(plotout)
-        #plotout = rbind(plotout, Rtdf)
+        Rtdf = add_R0_to_output(plotout, R0_values, parset)
+        plotout = rbind(plotout, Rtdf)
         
         write.csv(plotout, paste0(model_name, '_parset_', parset_id, '.csv'), row.names=F)
         rm(sim_full)
@@ -243,18 +248,18 @@ foreach(rnum=1:6) %do%{
 
     civisplot = civis_data %>% 
         mutate(deaths=total_deaths) %>%
-        gather(Compartment, Cases, deaths, confirmed_covid_icu, confirmed_covid_nonicu, hosp_deaths, nonhosp_deaths, incident_hospitalizations) %>% 
+        gather(Compartment, Cases, deaths, confirmed_covid_icu, confirmed_covid_nonicu, emr_deaths, nonhosp_deaths, incident_hospitalizations) %>% 
         filter(restore_region==region_to_plot) %>%
         mutate(source=case_when((Compartment=='confirmed_covid_icu') ~ 'emresource',
                                 (Compartment=='deaths') ~ source,
-                                (Compartment=='hosp_deaths') ~ as.character(source_hosp_deaths),
+                                (Compartment=='emr_deaths') ~ 'emresource',
                                 (Compartment=='nonhosp_deaths') ~ 'IDPH line list',
                                 (Compartment=='incident_hospitalizations') ~ 'IDPH line list',
                                 (Compartment=='confirmed_covid_nonicu') ~ 'emresource')) %>%
         mutate(Compartment=case_when((Compartment=='deaths')~'All reported deaths',
                                      (Compartment=='confirmed_covid_icu')~'Confirmed ICU cases',
                                      (Compartment=='nonhosp_deaths')~'Non-hospital deaths',
-                                     (Compartment=='hosp_deaths')~'Hospitalized deaths',
+                                     (Compartment=='emr_deaths')~'Hospitalized deaths',
                                      (Compartment=='incident_hospitalizations') ~ 'Incident hospitalizations',
                                      (Compartment=='confirmed_covid_nonicu') ~ 'Confirmed non-ICU hospital cases' ))
 
@@ -341,11 +346,11 @@ ptilelow <- function(x){return(quantile(x, 0.025))}
 ptilemed <- function(x){return(quantile(x, 0.5))}
 
 
-#Rt_all = agg %>% filter(Compartment=='Rt') %>%
-#    group_by(Date, intervention, Region) %>%
-#    summarize(Rt_median=ptilemed(Cases),
-#          Rt_lower=ptilelow(Cases),
-#          Rt_upper=ptilehigh(Cases))
+Rt_all = agg %>% filter(Compartment=='Rt') %>%
+    group_by(Date, intervention, Region) %>%
+    summarize(Rt_median=ptilemed(Cases),
+          Rt_lower=ptilelow(Cases),
+          Rt_upper=ptilehigh(Cases))
 
 prev = agg %>% filter(Compartment=='Prevalence') %>%
     group_by(Date, intervention, Region) %>%
@@ -407,7 +412,7 @@ final_output = inner_join(prev, inc, by=c('Date', 'intervention', 'Region')) %>%
     inner_join(icu, by=c('Date', 'intervention', 'Region')) %>%
     inner_join(vent,by=c('Date', 'intervention', 'Region')) %>%
     inner_join(recov, by=c('Date', 'intervention', 'Region')) %>%
-    #inner_join(Rt_all, by=c('Date', 'intervention', 'Region')) %>%
+    inner_join(Rt_all, by=c('Date', 'intervention', 'Region')) %>%
     filter(Date >= as.Date('2020-03-13')) %>% 
     arrange(Region, intervention, Date)
 
