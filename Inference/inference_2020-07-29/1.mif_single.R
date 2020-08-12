@@ -58,8 +58,8 @@ pars$region_to_test = region_to_test
 
 if (use_changepoint){
   parnames = c('beta1_', 'beta2_', 'num_init_', 'scale_phase3_', 'scale_phase4_')
-  lower_pars = c(0.5, 0.02, 10, 0.1, 0.1)
-  upper_pars = c(0.9, 0.04, 1000, 0.5, 0.5)
+  lower_pars = c(0.4, 0.2, 10, 0.1, 0.1)
+  upper_pars = c(0.8, 0.3, 1000, 0.5, 0.5)
   names(lower_pars) = paste0(parnames, region_to_test)
   names(upper_pars) = paste0(parnames, region_to_test)
   design=sobolDesign(lower=lower_pars, upper=upper_pars, num_points)
@@ -111,8 +111,8 @@ if (use_changepoint){
 
 } else {
   parnames = c('beta1_', 'num_init_')
-  lower_pars = c(0.5, 10)
-  upper_pars = c(0.9, 1000)
+  lower_pars = c(0.4, 10)
+  upper_pars = c(0.8, 1000)
   names(lower_pars) = paste0(parnames, region_to_test)
   names(upper_pars) = paste0(parnames, region_to_test)
   design=sobolDesign(lower=lower_pars, upper=upper_pars, num_points)

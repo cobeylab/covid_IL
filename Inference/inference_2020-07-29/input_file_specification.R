@@ -1,8 +1,5 @@
-data_filename = './emr_linelist_fitting_data.csv' # Location of linelist data
-idph_filename = './incident_idph_regions.csv' # Location of IDPH public data broken down by region
 simend = '2020-07-22' # Set to last date in the EMR data
 use_changepoint  = F # Model changes in transmission as changepoints or with covariates?
-beta_covariate_file = 'Data/mobility_covar_table.csv' # CSV that contains columns for the time and each of the covariates that you want to use
 beta_covariate_column = 'crowdedness' # Name of the transmission covariate you want to use
 
 ## Parameters for global search and likelihood calculation, 
@@ -12,14 +9,20 @@ n_mif = 2
 n_particles_mif = 2
 n_particles_pfilter = 2
 
+# CSV that contains columns for the time and each of the covariates that you want to use
+# Note that the filepath should be specified RELATIVE to the covid_IL directory.
+beta_covariate_file = 'Data/mobility_covar_table.csv' 
 
 ### Shouldn't need to change anything below this point ###
+
 t_ref='2020-01-14'
 simstart = '2020-03-01'
 min_data_time = '2020-03-16'
 intervention_start='2020-03-16'
 min_data_time_ICU = '2020-04-07'
 
+data_filename = './emr_linelist_fitting_data.csv' # Location of linelist data
+idph_filename = './incident_idph_regions.csv' # Location of IDPH public data broken down by region
 dmeasFile = 'Inference/dmeasure.c'
 init_file='Inference/initializer.c'
 if (use_changepoint){
@@ -42,9 +45,8 @@ population_filename_3 = 'Data/IL_population_northeast.csv'
 population_filename_4 = 'Data/IL_population_southern.csv'
 population_filename_5 = 'Data/IL_population_chicago.csv'
 
-
-## Notes for projection pipeline
-
-## need to modify projections to work in case of changepoint vs. nonchangepoint, i.e.
-
-projection_dir = paste0('./projections_', Sys.Date())
+## Projections
+projection_dir = paste0('./projections_', Sys.Date(), "/")
+final_projection_date = "2021-03-13"
+projection_functions = "Forecasting/projection_functions.R"
+model_name="baseline"
