@@ -54,6 +54,10 @@ const double *N = &N_1_1;
 const double *age_dist = &age_dist_1_1;
 const double *num_init = &num_init_1;
 
+
+//double *nonicubed = &nonicubed_1;
+//double *icubed = &icubed_1;
+
 // Code to have the option of looking at a single region
 int start_loop;
 int end_loop;
@@ -69,11 +73,17 @@ for (int region=start_loop; region<end_loop; region += 1 ){
 
   // initialize multinomial draw to determine age distribution
   int rN[num_age_groups];
+  int total_pop = 0;
   double age_dist_region[num_age_groups];
   for (int ag=0; ag<num_age_groups; ag+=1){
     age_dist_region[ag] = age_dist[ag + region * num_age_groups];
+    total_pop += N[ag + region * num_age_groups];
   }
-  rmultinom(ceil(num_init[region]), age_dist_region, num_age_groups, rN);
+
+  double num_init_final = num_init[region] * total_pop;
+
+
+  rmultinom(ceil(num_init_final), age_dist_region, num_age_groups, rN);
 
   for (int i=0; i<num_age_groups; i += 1){
       int EStart = i * alpha_E_int + region * alpha_E_int * num_age_groups;
@@ -163,5 +173,11 @@ for (int region=start_loop; region<end_loop; region += 1 ){
       //new_IH4[i + region * num_age_groups] = 0;
       new_symptomatic_infections[i + region * num_age_groups] = 0;
       //new_mild_infections[i + region * num_age_groups] = 0;
+
+      //if (region == 2){
+      //  icubed[i] = 0;
+      //  nonicubed[i] = 0;
+     //}
+
   }
 }
