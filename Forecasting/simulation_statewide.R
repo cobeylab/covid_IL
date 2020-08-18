@@ -194,10 +194,14 @@ simulate_pomp_covid__init_parameters <- function(
       "region_to_test" = region_to_test,
       "sigma" = 1/inv_sigma,
       "eta" = 1/inv_eta,
-      "zeta_h" = 1/inv_zeta_h,
       "zeta_s" = 1/inv_zeta_s,
       "mu_m" = 1/inv_mu_m,
-
+      "gamma_m" = 1/inv_gamma_m,
+      'mu_h' = 1/inv_mu_h,
+      "zeta_h_max" = zeta_h_max,
+      "zeta_h_min" = zeta_h_min,
+      "zeta_h_logit" = zeta_h_logit,
+      "gamma_c" = 1/inv_gamma_c,
       "alpha_E"= alpha_E,
       "alpha_P"= alpha_P,
       "alpha_A"= alpha_A,
@@ -208,28 +212,22 @@ simulate_pomp_covid__init_parameters <- function(
       "alpha_IH3" = alpha_IH3, 
       "alpha_IC2" = alpha_IC2,
       "alpha_IC3" = alpha_IC3,
-      "alpha_IH4" = alpha_IH4,
+      "alpha_IH4" = alpha_IH4
 
-      "b_elderly" = b_elderly,
-      "gamma_m" = 1/inv_gamma_m,
-
-      'gamma_c_min' = 1/inv_gamma_c_min, 
-      'gamma_c_max' = 1/inv_gamma_c_max,
-      'gamma_c_slope' = gamma_c_slope,
-      'gamma_h_min' = 1/inv_gamma_h_min,
-      'gamma_h_max' = 1/inv_gamma_h_max,
-      'gamma_h_slope' = gamma_h_slope,
-
-      'mu_c' = 1/inv_mu_c,
-      'mu_h' = 1/inv_mu_h
     )
     
     # Age-specific parameters
     params[paste0("rho_",c(1:n_age_groups))] = unlist(
       input_params[paste0('rho_', c(1:n_age_groups))]
     )
-    params[paste0("kappa_",c(1:n_age_groups))] = unlist(
-      input_params[paste0('kappa_', c(1:n_age_groups))]
+    params[paste0("IHR_logit_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('IHR_logit_', c(1:n_age_groups))]
+    )
+    params[paste0("IHR_min_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('IHR_min_', c(1:n_age_groups))]
+    )
+    params[paste0("IHR_max_",c(1:n_age_groups))] = unlist(
+      input_params[paste0('IHR_max_', c(1:n_age_groups))]
     )
     params[paste0("q_",c(1:n_age_groups))] = unlist(
       input_params[paste0('q_', c(1:n_age_groups))]
@@ -237,9 +235,16 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("age_beta_scales_",c(1:n_age_groups))] = unlist(
       input_params[paste0('age_beta_scales_', c(1:n_age_groups))]
     )
-    params[paste0("zeta_c_",c(1:3))] = unlist(
-        1/unlist(input_params[paste0('inv_zeta_c_', c(1:3))])
+    params[paste0("zeta_c_",c(1:n_age_groups))] = unlist(
+        1/unlist(input_params[paste0('inv_zeta_c_', c(1:n_age_groups))])
     )
+    params[paste0("mu_c_",c(1:n_age_groups))] = unlist(
+        1/unlist(input_params[paste0('inv_mu_c_', c(1:n_age_groups))])
+    )
+    params[paste0("gamma_h_",c(1:n_age_groups))] = unlist(
+        1/unlist(input_params[paste0('inv_gamma_h_', c(1:n_age_groups))])
+    )
+
     params[paste0("psi1_",c(1:n_age_groups))] = unlist(
       input_params[paste0('psi1_', c(1:n_age_groups))]
     )
