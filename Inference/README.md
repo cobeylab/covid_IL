@@ -1,5 +1,11 @@
 # Inference for Illinois SARS-CoV-2 model
 
+## Update for 2020-09-17
+
+We will be adding updated descriptions of model pipeline files in the near future. Relevant scripts are now kept within a dated inference directory for record-keeping. Briefly, `mif` searches now are initiated from the previous MLE with the latest available data instead of initiating a random search of parameter space for each inference run.
+
+## Summary
+
 We fitted the number of people initially infected in each region of Illinois (see [Data](../Data)) and the pre- and post-intervention transmission rates to the number of observed hospitalized deaths per day in each region.
 Other parameters were fixed ([Parameters](.../Parameters)).
 
