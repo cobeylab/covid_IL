@@ -42,6 +42,7 @@ if (reg < 0){
 
 for (int region=start_loop; region<end_loop; region += 1){
     // Set up reporting for deaths
+
     double frac_underreported_draw = rnorm(frac_underreported[0], frac_underreported_se[0]);
     if (frac_underreported_draw > 1){
         frac_underreported_draw=1;
