@@ -54,3 +54,32 @@ redistribute_hospitalizations = function(){
 }
 
 
+add_R0_to_output = function(plotdf, R0_vals, parset_id){
+
+foreach(rnum=0:11, .combine='rbind') %do%{
+    
+    region_to_plot = rnum
+    if (rnum==0){
+        pop_total = sum(population_list$POPULATION)
+    } else{
+        pop_total = population_list %>% filter(covid_region == rnum)
+        pop_total = sum(pop_total$POPULATION)        
+    }
+
+    plotdf %>% 
+        filter(Compartment %in% c('S')) %>% 
+        mutate(Compartment = case_when((Compartment == 'S') ~ 'Susceptible')) %>%
+        filter(as.numeric(Region)==region_to_plot) %>%
+        mutate(Cases = Cases / pop_total) -> incidence_plots
+
+        Rt = left_join(incidence_plots, R0_vals, by=c("Date", "Region", "parset")) %>%
+            mutate(Rt = Cases * R0) %>% 
+            select(-Cases, -Compartment) %>%
+            mutate(Cases=Rt, Compartment='Rt') %>%
+            select(-Rt, -time, -R0)
+
+    } -> Rt_values
+
+    return(Rt_values)
+
+}

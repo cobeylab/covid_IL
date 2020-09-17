@@ -16,47 +16,68 @@ jacobian=function(states, elist, pts){
     return(J)
 }
 
-get_foi_string <- function(beta,
+
+get_beta_from_parameters = function(input_params){
+    t_sip = 62
+    foreach(region=1:5, .combine='cbind') %do%{
+        t_phase3_max = input_params[[paste0('t_phase3_max_', region)]]
+        t_phase4_max = input_params[[paste0('t_phase4_max_', region)]]
+
+        scale_phase3 = input_params[[paste0('scale_phase3_', region)]]
+        scale_phase4 = input_params[[paste0('scale_phase4_', region)]]
+
+        t_phase3 = input_params[[paste0('t_phase3_', region)]]
+        t_phase4 = input_params[[paste0('t_phase4_', region)]] 
+
+        beta1 = input_params[[paste0('beta1_', region)]]
+        beta2 = input_params[[paste0('beta2_', region)]]
+
+        foreach (t = 1:500, .combine='rbind') %do%{
+            if (t < t_sip){
+                beta = beta1
+            } else if (t < t_phase3){
+                t_coord = t - t_sip + 1
+                slope = (beta1 - beta2) / 7
+                beta = if_else(t_coord < 7, beta1 - slope * t_coord, beta2)
+            } else if (t < t_phase4){
+                phase3_slope = (scale_phase3 * beta2) / (t_phase3_max - t_phase3)
+                transmission_phase3 = beta2 + phase3_slope * (t - t_phase3)
+                transmission_phase3_max = beta2 + phase3_slope * (t_phase3_max - t_phase3)
+                beta = if_else(t >= t_phase3_max, transmission_phase3_max, transmission_phase3)
+            } else{
+                phase4_change = scale_phase4 - scale_phase3
+                phase4_starting_point = beta2 * (1 + scale_phase3)
+                phase4_slope = phase4_change / (t_phase4_max - t_phase4)
+                transmission_phase4 = phase4_starting_point + phase4_slope * (t - t_phase4)
+                transmission_phase4_max = phase4_starting_point + phase4_slope * (t_phase4_max - t_phase4)
+                beta = if_else(t >= t_phase4_max, transmission_phase4_max, transmission_phase4)
+            }
+            beta
+        } -> new_scalings  
+    } ->temp
+    temp = data.frame(temp)
+    row.names(temp) = 1:500
+    names(temp) = 1:5
+    return(temp)
+}
+
+get_foi_string <- function(scaled_beta,
+                t,
                 ag, 
-                contact_matrix,
+                region_num,
                 population,
                 q_vec,
                 f_nurse_vec,
-                b_elderly,
-                b_scale_young=1) {
+                contact_covars) {
     foi_string = list()
     for (jj in seq(1, 9)){
+        C_val = contact_covars[sprintf('C_%s_%s_%s', ag, jj, region_num), t]
         infectious = sprintf("(%s+%s+%s+%s)", paste0('P', jj), paste0('A', jj), paste0('IM', jj), paste0('IS', jj))
-        if (ag %in% seq(7,9) & jj %in% seq(7,9)){
-            c_nurse = b_elderly * f_nurse_vec[ag]
-        } else{
-            c_nurse = 0
-        }
-        
-        if (ag %in% seq(3,6)){
-            b_scale = b_scale_young
-        } else{
-            b_scale = 1
-        }
-
-        foi = sprintf("(%s * %s * %s * %s / %s)", q_vec[ag], beta * b_scale, (contact_matrix[ag, jj] + c_nurse), infectious, population[jj, 'POPEST2018_CIV'])
+        foi = sprintf("(%s * %s * %s * %s / %s)", q_vec[ag], scaled_beta, C_val, infectious, population[jj, 'POPEST2018_CIV'])
         foi_string[jj] = foi
     }
     
     paste(foi_string, collapse="+")
-}
-
-get_contact_matrix <- function(flat_matrices,
-                               preSIP=T,
-                               region){
-    mat_start = 1 + (81 * (region - 1))
-    mat_end = 81 + (81 * (region - 1))
-    if(preSIP){
-        C = flat_matrices$work[mat_start:mat_end] + flat_matrices$school[mat_start:mat_end] + flat_matrices$home[mat_start:mat_end] + flat_matrices$other[mat_start:mat_end]
-    }else{
-        C = 0.6 * flat_matrices$work[mat_start:mat_end] + flat_matrices$home[mat_start:mat_end] + 0.5 * flat_matrices$other[mat_start:mat_end]
-    }
-        matrix(C, ncol=9, nrow=9)
 }
 
 get_single_beta_scale = function(date,
@@ -84,7 +105,8 @@ calculate_phi <- function(rho, kappa, psi1, psi2, frac_nonhosp_deaths){
 
 get_R0 <- function(region_name, beta_value, b_elderly,b_young, date,
                    paras, fnhd,
-                   flat_contacts=pomp_contacts,
+                   t,
+                   contacts
                    t_intervention_start = as.Date('2020-03-16')){
 
     # Get region number
@@ -106,16 +128,6 @@ get_R0 <- function(region_name, beta_value, b_elderly,b_young, date,
                                 psi2=paras$psi2,
                                 frac_nonhosp_deaths = fnhd[region])
 
-    # Determine if in SIP
-    if(date < t_intervention_start){
-        preSIP = T
-    } else{
-        preSIP = F
-    }
-    
-    # Get contact matrix
-    contacts = get_contact_matrix(flat_contacts, preSIP=preSIP, region=region)
-    
     # Set up disease-free equilibrium
     deq = list()
     for (age_group in seq(1, 9)){
@@ -132,7 +144,7 @@ get_R0 <- function(region_name, beta_value, b_elderly,b_young, date,
         F_matrix = c()
         for (ag in seq(1, 9)){
              with(paras, {
-                foi_string = get_foi_string(beta_value, ag, contacts, pop, q_vec=qq, f_nurse_vec=f_nurse, b_elderly=b_elderly, b_scale_young=b_young)
+                foi_string = get_foi_string(beta_value, ag, contacts, pop, q_vec=qq)
                 dE = parse(text=sprintf("(%s) * S%s", foi_string, ag))
                 dA = parse(text="0")
                 dP = parse(text="0")
@@ -149,7 +161,7 @@ get_R0 <- function(region_name, beta_value, b_elderly,b_young, date,
         V_matrix = c()
         for (ag in seq(1, 9)){
              with(paras, {
-                foi_string = get_foi_string(beta_value, ag, contacts, pop, q_vec=qq, f_nurse_vec=f_nurse, b_elderly=b_elderly)
+                foi_string = get_foi_string(beta_value, ag, contacts, pop, q_vec=qq)
                 dE = parse(text=sprintf("-%s * E%s", sigma[ag], ag))
                 dA = parse(text=sprintf("%s * %s * E%s - %s * A%s", rho[ag], sigma[ag], ag, eta[ag], ag))
                 dP = parse(text=sprintf("(1-%s) * %s * E%s - %s * P%s", rho[ag], sigma[ag], ag, zeta_s[ag], ag))
