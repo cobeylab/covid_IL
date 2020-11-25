@@ -4,37 +4,36 @@ Contributors from the [Cobey lab](https://cobeylab.uchicago.edu) (listed alphabe
 
 ### Model overview
 
-This mathematical model infers past SARS-CoV-2 transmission rates in Illinois and can be used to forecast community spread, hospital and ICU burden, and mortality under current and hypothetical public health interventions.
+This mathematical model infers past SARS-CoV-2 transmission rates in Illinois and can be used to forecast community spread, hospital burden, and mortality.
 
 This is a compartmental SEIR model.
 Compartments consist of individuals who are susceptible (S); exposed and infected (but not yet infectious) (E); infectious, i.e., able to infect others (I); and recovered and immune (R).
-We subdivide these compartments to track asymptomatic and symptomatic infections, multiple stages of hospitalization, and fatalities.
-The model is age-structured, in that compartments are further subdivided into age groups that differ in, e.g., their probability of being an asymptomatic case and contacting other age groups.
+We subdivide these compartments to track infections, hospitalization, and fatalities.
 
 When individuals are infected, they enter the latent or exposed class (E), where they cannot transmit infections to others (Figure).
-Individuals that enter the asymptomatic class (A) can infect others in the community, but they eventually recover without showing symptoms.
-People who enter the presymptomatic infectious class (P) eventually develop symptoms.
-Symptomatic infections are divided into mild cases, I<sub>M</sub>, which will either resolve without hospital attention or progress to death outside of the hospital, and severe cases, I<sub>S</sub>, which require hospitalization.
-Severe cases can be in the ICU (I<sub>C</sub>) or not (class I<sub>H</sub>), and can die.
+People who enter the presymptomatic infectious class (P) either develop symptoms or remain asymptomatic.
+We assume that the duration of infectiousness for asymptomatic infections is the same as the duration of infectiousness for mild symptomatic infections, and therefore do not explicitly model an asymptomatic compartment.
+Presymptomatic infections are divided into non-hospitalized infections (I<sub>R</sub> and I<sub>D</sub>) and infections that require hospitalization (I<sub>H</sub>).
+Hospitalized infections are either discharged (H<sub>R</sub>) or die in the hospital (H<sub>D</sub>).
 
 ![Figure 1](model_diagram.png)
-Rate parameters determine the average amount of time in each compartment.
-Probabilities determine the fraction of people following specific paths between compartments.
+Rate parameters (blue) determine the average amount of time in each compartment.
+Probabilities (red) determine the fraction of people following specific paths between compartments.
 The model is stochastic, in that in each time step, the number of individuals transitioning between compartments is drawn randomly based on these rate and probability parameters.
 
 ### Data
-The model is fitted to in-hospital deaths reported by the Illinois Department of Public Health (IDPH) after March 15, out-of-hospital deaths reported by IDPH between March 15 and April 26, and confirmed cases in the ICU reported by IDPH from April 7 onward.
-Deaths before March 15 and ICU cases before April 7 are excluded due to concerns about excessive underreporting.
-The data we received from IDPH track in-hospital deaths precisely from March 16 onward and confirmed cases in the ICU from April 7 onward.
-To better approximate dynamics for the entire state, epidemic dynamics are estimated separately for four geographic subregions used by the [Restore Illinois plan](https://dph.illinois.gov/restore) ([Data](./Data)).
+The model is fitted to in-hospital deaths reported by the Illinois Department of Public Health (IDPH) after March 15, all COVID deaths reported by IDPH after March 15, and the total number of hospital beds occupied by confirmed COVID cases reported by IDPH after May 6.
+The data we received from IDPH track in-hospital deaths precisely from March 16 onward and confirmed cases in the hospital from May 7 onward.
+To better approximate dynamics for the entire state, epidemic dynamics are estimated separately for 11 geographic subregions used by the [Restore Illinois plan](https://coronavirus.illinois.gov/s/restore-illinois-introduction) ([Data](./Data)).
 
 ### Observation model
-Limited testing capacity and false negatives mean that not all deaths and ICU admissions from COVID-19 infection are observed.
+Incomplete hospital reporting means that not all deaths and hospital admissions from COVID-19 infection are observed.
 Although the model tracks all underlying infections and deaths, it assumes only a fraction will be confirmed and counted.
 
 ### Inference
-For each region in Illinois, we infer the transmission rate of SARS-CoV-2 before and during shelter-in-place.
-The model also estimates the reporting rate for out-of-hospital deaths and the number of individuals infected on March 1, the start of the simulation.
+For each region in Illinois, we infer the transmission rate at 13 timepoints and assume that the transmission rate changes linearly between each timepoint.
+We also infer region-specific parameters governing the hospital course: the infection hospitalization ratio (IHR), the time-varying hospitalization fatality ratio (HFR) and the time-varying duration of the hospital stay.
+To account for deaths that occur without hospitalization, we infer a region-specific probability that a non-hospitalized infection ends in death.  
 Other parameters are fixed based on values from the literature ([Parameters](./Parameters)).
 The model is fitted to the data using sequential Monte Carlo, a particle filter ([Inference](./Inference)).
 
@@ -43,16 +42,9 @@ We simulate the dynamics of SARS-CoV-2 in Illinois using the best-fit parameters
 Simulations involving different public health interventions will be later uploaded to the [Forecasting](./Forecasting) directory.
 The forecasts incorporate several types of uncertainty that contribute to variation:
 * Uncertainty in precisely how many individuals will be infected, recover, or die each day (demographic stochasticity)
-* Uncertainty in the fraction of COVID-19 deaths in hospitals that were missed in March due to inadequate testing
-* Uncertainty in the fraction of the population infected on March 1
-* Uncertainty in the inferred transmission rates
+* Uncertainty in the final inferred transmission rate for each region.
 
-Incorporating all of these types of uncertainty produces a range of potential epidemic trajectories.
-
-### Public health interventions 
-The model can be adapted to investigate different types of interventions.
-We currently model shelter-in-place as a reduction in the overall transmission rate, which is shared by all infected individuals, and reductions in age- and location-specific contact rates.
-We model specific hypothetical scenarios to reflect the relaxing of shelter-in-place interventions, which we describe in the [Forecasting](./Forecasting) directory.
+Incorporating this uncertainty produces a range of potential epidemic trajectories.
 
 ### Caveats
 The model's predictions will shift as new data on COVID-19 emerges from Illinois and around the world.
@@ -64,7 +56,6 @@ And we will continue to engage with other scientists and modelers, and learn fro
 Some important assumptions of our model include:
 * Infected individuals who become hospitalized no longer contribute to population transmission. Obviously, if insufficient PPE is available or a hospitalized case is not diagnosed in time, this could be a bad assumption.
 * The geographic regions of Illinois are independent (i.e., meaningful transmission does not occur between regions).
-* Interventions occur immediately at a fixed intensity. This assumption is currently supported by mobility data we have analyzed from Facebook, which show a fairly abrupt change in movement that has mostly been sustained.
 * Changes in season have no effect on susceptibility or transmission. Although there probably is some seasonal variation in these factors, which leads to wintertime colds and flus in temperate populations, the magnitude of these effects has been a longstanding question in infectious disease biology. Pandemics in particular tend to violate typical patterns. We discuss the complexity of these seasonal factors in a [recent paper](https://science.sciencemag.org/content/early/2020/04/23/science.abb5659/tab-article-info).
 * Many parameters in our model are fixed based on existing literature (see [Parameters](./Parameters)).
 
