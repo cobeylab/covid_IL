@@ -1,12 +1,8 @@
 # Inference for Illinois SARS-CoV-2 model
 
-## Update for 2020-09-17
-
-We will be adding updated descriptions of model pipeline files in the near future. Relevant scripts are now kept within a dated inference directory for record-keeping. Briefly, `mif` searches now are initiated from the previous MLE with the latest available data instead of initiating a random search of parameter space for each inference run.
-
 ## Summary
 
-We fitted the number of people initially infected in each region of Illinois (see [Data](../Data)) and the pre- and post-intervention transmission rates to the number of observed hospitalized deaths per day in each region.
+We calibrated our model to infer the number of people initially infected in each region of Illinois (see [Forecasts](../Forecasts)); region-specific transmission rates at 13 changepoints; the region-specific, time-varying hospitalization fatality rate (HFR); the region-specific, time-varying duration of the hospital stay; and the region-specific fraction of non-hospitalized infections that result in death.
 Other parameters were fixed ([Parameters](.../Parameters)).
 
 From a set of parameters, we can simulate both the hidden (latent) states (e.g., underlying fraction infected and immune) and observations (e.g., recorded COVID-19 deaths) of the model.
@@ -15,17 +11,21 @@ To calculate the likelihood, we use a [particle filter](https://kingaa.github.io
 To find the best-fitting set of parameters, we use the [iterated filtering method](https://kingaa.github.io/sbied/mif/mif.html) also implemented in `pomp`.
 Briefly, through repeated rounds of simulating the dynamics and then perturbing parameter values, this approach can find the parameter values that can best reproduce the data.
 
+Code used to fit the model to new data are stored in dated directories. The most recent fits were produced with the code in [projections_20201124](./projections_20201124).
+
 ## Model file descriptions
 
-* `rprocess_noise_non_hosp_deaths_region_contacts.c`: Process model that describes how people move through compartments at each timestep.
-* `initializer_non_hosp_deaths.c`: Initializer that places people into infectious classes at the beginning of the simulation.
-* `dmeasure_deaths_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths. Observed deaths at each timestep are a sample of those who have died in the hospital. We assume that we do not observe all COVID-19 deaths because testing does not detect all infections.
-* `dmeasure_deaths_ICU_aggregate.c`: Calculation of model likelihood based on observed hospitalized deaths and confirmed ICU cases. Observed deaths at each timestep are a sample of those who have died in the hospital. Observed ICU cases are a sample of all people in ICU model compartments. We assume that we do not observe all COVID-19 deaths and ICU cases because testing does not detect all infections.
+* `rprocess_no_age_changepoint.c`: Process model that describes how people move through compartments at each timestep.
+* `initializer_no_age.c`: Initializer that places people into infectious classes at the beginning of the simulation.
+* `dmeasure_no_age.c`: Calculation of model likelihood based on observed hospitalized deaths, total observed deaths, and census hospitalization.
+* `rmeasure_no_age.c`: Code to simulate observed states from latent states.
 
 ## Run script descriptions
-* `inference_functions.R`: Essential functions for creating and using `pomp` objects. 
-* `1_mif_single.R`: Runs `mif` search from Latin hypercube sample of points.
-* `2_get_end_points_from_mif.R`: Aggregate endpoints of mif chains.
-* `3_pfilter_end_points.R`: Evaluates likelihood on end `mif` points with `pfilter`.
-* `4_pfilter_grid_search.R`: Performs a pfilter search on a Latin hypercube sample of points that surround the MLE.
-* `5_simulate_and_plot.R`: Aggregates all points and simulates from MLE.
+* `simulation_functions_no_age.R`: Essential functions for creating and using `pomp` objects. 
+* `fit_regions.R`: Runs `mif` search starting from previous MLE.
+* `aggregate_results.R`: Aggregate endpoints of mif chains.
+* `simulate_regions.R`: Simulate results from MLE of each region.
+* `slice_regions.R`: Take a likelihood slice over the final transmission rate.
+* `project_regions.R`: Make final projections.
+* `project_statewide.R`: Aggregate results from individual regions to generate Illinois projections.
+
