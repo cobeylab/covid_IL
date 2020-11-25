@@ -1,0 +1,156 @@
+```{r, fig.height=6, fig.width=8}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tibble)
+
+last_date = as.Date('2020-11-23')
+first_date = as.Date('2020-03-01')
+fit_results = './latest_fit_results/uchicago_20201124.csv'
+cdc_hosp_file = '../Data/reported_hospital_utilization_timeseries_20201122_2140.csv'
+
+covidregion_map = c(covidregion_1 = 'COVID region 1',
+                    covidregion_2 = 'COVID region 2',
+                    covidregion_3 = 'COVID region 3',
+                    covidregion_4 = 'COVID region 4',
+                    covidregion_5 = 'COVID region 5',
+                    covidregion_6 = 'COVID region 6',
+                    covidregion_7 = 'COVID region 7',
+                    covidregion_8 = 'COVID region 8',
+                    covidregion_9 = 'COVID region 9',
+                    covidregion_10 = 'COVID region 10',
+                    covidregion_11 = 'COVID region 11',
+                    illinois = 'Illinois')
+
+summarize = dplyr::summarize
+
+public_data = read.csv('../Data/idph_public_covid_region.csv') %>%
+    mutate(date=as.Date(date)) %>%
+    filter(date >= first_date, date<=as.Date('2020-12-31')) %>%
+    rename(covid_region = new_restore_region) %>%
+    mutate(geography_modeled = paste0('COVID region ', covid_region)) %>%
+    select(date, geography_modeled,new_deaths)
+
+public_statewide = read.csv('../Data/idph_public_covid_region.csv') %>%
+    mutate(date=as.Date(date)) %>%
+    select(date, new_deaths) %>%
+    filter(date >= first_date, date<=as.Date('2020-12-31')) %>%
+    dplyr::group_by(date) %>%
+    summarize(new_deaths = sum(new_deaths)) %>%
+    ungroup() %>%
+    mutate(geography_modeled = 'Illinois') %>%
+    bind_rows(public_data) %>%
+    mutate(geography_modeled = factor(geography_modeled, levels = c('Illinois', paste0('COVID region ', 1:11))))
+
+public_data = public_statewide %>%
+    mutate(new_deaths = ifelse(new_deaths < 0, NA, new_deaths))
+
+projections = read.csv(fit_results) %>%
+    mutate(date = as.Date(date)) %>%
+    filter(date >= first_date, date<=as.Date('2020-12-31'))
+
+populations = read.csv('../Data/covid_region_populations.csv') %>%
+    group_by(covid_region) %>%
+    summarize(pop = sum(POPULATION)) %>%
+    ungroup() %>%
+    mutate(geography_modeled = paste0('covidregion_', covid_region)) %>%
+    select(geography_modeled, pop)
+
+pop_state = read.csv('../Data/covid_region_populations.csv') %>%
+    summarize(pop = sum(POPULATION)) %>%
+    ungroup() %>%
+    mutate(geography_modeled = 'illinois') %>%
+    select(geography_modeled, pop) %>%
+    bind_rows(populations)
+populations=pop_state
+
+cdchosp = read.csv(cdc_hosp_file) %>% 
+    filter(state=='IL') %>% 
+    mutate(date=as.Date(date)) %>% 
+    select(date, total_adult_patients_hospitalized_confirmed_covid, total_pediatric_patients_hospitalized_confirmed_covid) %>%
+    drop_na() %>%
+    arrange(date) %>%
+    mutate(hosp_census = total_adult_patients_hospitalized_confirmed_covid + total_pediatric_patients_hospitalized_confirmed_covid,
+           geography_modeled = 'Illinois') %>%
+    select(date, hosp_census, geography_modeled) %>%
+    mutate(geography_modeled = factor(geography_modeled, levels = c('Illinois', paste0('COVID region ', 1:11))))
+
+projections = left_join(projections, populations, by='geography_modeled') %>%
+    mutate(geography_modeled = covidregion_map[as.character(geography_modeled)]) %>%
+    mutate(geography_modeled = factor(geography_modeled, levels = c('Illinois', paste0('COVID region ', 1:11))))
+
+
+projections %>%
+    ggplot(aes(x=date, fill='Model', color='Model')) +
+    geom_line(aes(y=deaths_det_median)) +
+    geom_ribbon(aes(ymin=deaths_det_lower, ymax=deaths_det_upper), alpha=0.2, color=NA) +
+    geom_point(public_data, mapping=aes(x=date, y=new_deaths, color='Observed', fill='Observed'), size=0.75, alpha=0.5) +
+    facet_wrap(~geography_modeled, scales='free_y') +
+    geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
+    theme_bw() +
+    ylab('Daily deaths') +
+    scale_fill_brewer(palette='Dark2') +
+    scale_color_brewer(palette='Dark2') +
+    scale_linetype_manual(values='dashed') +
+    xlab('Date') +
+    labs(color='', fill='', linetype='')+
+    theme(legend.position = 'bottom')
+
+ggsave('plots/uc_deaths.png')
+
+
+projections %>%
+    ggplot(aes(x=date, fill='Model', color='Model')) +
+    geom_line(aes(y=hosp_bed_median)) +
+    geom_ribbon(aes(ymin=hosp_bed_lower, ymax=hosp_bed_upper), alpha=0.2, color=NA) +
+    geom_point(cdchosp, mapping=aes(x=date, y=hosp_census, color='Observed', fill='Observed'), size=0.75, alpha=0.5) +
+    facet_wrap(~geography_modeled, scales='free_y') +
+    geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
+    theme_bw() +
+    ylab('Hospital beds occupied by COVID patients') +
+    scale_fill_brewer(palette='Dark2') +
+    scale_color_brewer(palette='Dark2') +
+    scale_linetype_manual(values='dashed') +
+    xlab('Date') +
+    labs(color='', fill='', linetype='')+
+    theme(legend.position = 'bottom')
+ggsave('plots/uc_hosp.png')
+
+projections %>%
+    ggplot(aes(x=date, fill='Model', color='Model')) +
+    geom_line(aes(y=cases_median/pop)) +
+    geom_ribbon(aes(ymin=cases_lower/pop, ymax=cases_upper/pop), alpha=0.2) +
+    facet_wrap(~geography_modeled) +
+    geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
+    theme_bw() +
+    ylab('Prevalence') +
+    scale_fill_brewer(palette='Set3') +
+    scale_color_brewer(palette='Set3') +
+    scale_linetype_manual(values='dashed') +
+    xlab('Date') +
+    labs(color='', fill='', linetype='')+
+    theme(legend.position = 'bottom') +
+    #guides(color=F, fill=F) +
+    scale_y_continuous(labels=scales::percent)
+
+ggsave('plots/uc_prevalence.png')
+
+projections %>%
+    ggplot(aes(x=date, fill='Model', color='Model')) +
+    geom_line(aes(y=recovered_median/pop)) +
+    geom_ribbon(aes(ymin=recovered_lower/pop, ymax=recovered_upper/pop), alpha=0.2) +
+    facet_wrap(~geography_modeled) +
+    geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
+    theme_bw() +
+    ylab('Recovered') +
+    scale_fill_brewer(palette='Set3') +
+    scale_color_brewer(palette='Set3') +
+    scale_linetype_manual(values='dashed') +
+    xlab('Date') +
+    labs(color='', fill='', linetype='')+
+    theme(legend.position = 'bottom') +
+    #guides(color=F, fill=F) +
+    scale_y_continuous(labels=scales::percent)
+
+ggsave('plots/uc_seroprevalence.png')
+```
