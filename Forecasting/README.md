@@ -11,7 +11,9 @@ Our model is calibrated to each of the 11 COVID regions defined by the [Restore 
 Statewide estimates are produced by aggregating the projections from all regions.
 
 Figure 1: The 11 COVID regions.
-![Figure 2](./plots/covid_regions.png)
+<p align="center">
+  <img src="./plots/covid_regions.png">
+</p>
 
 Below, we show the results of our model projections through December 31, 2020.
 Solid lines indicate the median projected value and the shaded area shows the 95% prediction interval. 
