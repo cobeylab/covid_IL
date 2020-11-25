@@ -3,9 +3,8 @@
 ## Projecting infections, deaths, and hospitalizations
 
 We simulate our model forward in time to obtain projections for deaths, hospitalizations, and infections.
-To account for uncertainty in our estimate of the final transmission rate, we evaluate the likelihood of the final transmission rate over a range of values (0.9 to 1.1 times the maximum likelihood estimate).
-We then produce 1000 simulations that sample values of the final transmission rate from this range. 
-These transmission rates are sampled proportionally to likelihood, so values more consistent with the data are more likely to be sampled.  
+To account for the uncertainty in our estimate of the final transmission rate, we first evaluated the likelihood of rates within 10% of the maximum-likelihood value.  
+We then produced 1000 simulations using final transmission rates sampled proportionally to likelihood, so that values more consistent with the data were more likely to be sampled.
 
 Our model is calibrated to each of the 11 COVID regions defined by the [Restore Illinois plan](https://coronavirus.illinois.gov/s/restore-illinois-introduction) (Figure 1). 
 Statewide estimates are produced by aggregating the projections from all regions.
@@ -19,7 +18,7 @@ Below, we show the results of our model projections through December 31, 2020.
 Solid lines indicate the median projected value and the shaded area shows the 95% prediction interval. 
 The dashed line shows the latest date in the data used to calibrate the model.
 
-Figure 2: Reported deaths per day in the state of Illinois and each of the 11 COVID regions. Orange points show the reported number of daily deaths. We calibrate our model to data with precise date of death. This differs from the death counts shown here, which are subject to reporting delays.
+Figure 2: Reported deaths per day in the state of Illinois and each of the 11 COVID regions (orange, subject to reporting delays), and our model predictions for precise date of death per day (green).
 ![Figure 2](./plots/uc_deaths.png)
 
 Figure 3: Hospital beds occupied by COVID-19 patients in the state of Illinois and each of the 11 COVID regions. Orange points show the number of hospital beds occpied by COVID patients for the state of Illinois [reported to the CDC](https://healthdata.gov/dataset/covid-19-reported-patient-impact-and-hospital-capacity-state-timeseries).

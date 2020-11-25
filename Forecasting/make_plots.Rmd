@@ -119,13 +119,13 @@ ggsave('plots/uc_hosp.png')
 projections %>%
     ggplot(aes(x=date, fill='Model', color='Model')) +
     geom_line(aes(y=cases_median/pop)) +
-    geom_ribbon(aes(ymin=cases_lower/pop, ymax=cases_upper/pop), alpha=0.2) +
+    geom_ribbon(aes(ymin=cases_lower/pop, ymax=cases_upper/pop), alpha=0.2, color=NA) +
     facet_wrap(~geography_modeled) +
     geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
     theme_bw() +
     ylab('Prevalence') +
-    scale_fill_brewer(palette='Set3') +
-    scale_color_brewer(palette='Set3') +
+    scale_fill_brewer(palette='Dark2') +
+    scale_color_brewer(palette='Dark2') +
     scale_linetype_manual(values='dashed') +
     xlab('Date') +
     labs(color='', fill='', linetype='')+
@@ -138,13 +138,13 @@ ggsave('plots/uc_prevalence.png')
 projections %>%
     ggplot(aes(x=date, fill='Model', color='Model')) +
     geom_line(aes(y=recovered_median/pop)) +
-    geom_ribbon(aes(ymin=recovered_lower/pop, ymax=recovered_upper/pop), alpha=0.2) +
+    geom_ribbon(aes(ymin=recovered_lower/pop, ymax=recovered_upper/pop), alpha=0.2, color=NA) +
     facet_wrap(~geography_modeled) +
     geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
     theme_bw() +
     ylab('Recovered') +
-    scale_fill_brewer(palette='Set3') +
-    scale_color_brewer(palette='Set3') +
+    scale_fill_brewer(palette='Dark2') +
+    scale_color_brewer(palette='Dark2') +
     scale_linetype_manual(values='dashed') +
     xlab('Date') +
     labs(color='', fill='', linetype='')+
