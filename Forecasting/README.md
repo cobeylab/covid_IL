@@ -2,12 +2,12 @@
 
 ## Projecting infections, deaths, and hospitalizations
 
+Our model is calibrated to each of the 11 COVID regions defined by the [Restore Illinois plan](https://coronavirus.illinois.gov/s/restore-illinois-introduction) (see [Data](../Data)). 
+Statewide estimates are produced by aggregating the projections from all regions.
+
 We simulate our model forward in time to obtain projections for deaths, hospitalizations, and infections.
 To account for the uncertainty in our estimate of the final transmission rate, we first evaluated the likelihood of rates within 10% of the maximum-likelihood value.
 We then produced 1000 simulations using final transmission rates sampled proportionally to likelihood, so that values more consistent with the data were more likely to be sampled.
-
-Our model is calibrated to each of the 11 COVID regions defined by the [Restore Illinois plan](https://coronavirus.illinois.gov/s/restore-illinois-introduction) (see [Data](../Data)). 
-Statewide estimates are produced by aggregating the projections from all regions.
 
 Below, we show the results of our model projections through December 31, 2020.
 Solid lines indicate the median projected value and the shaded area shows the 95% prediction interval. 
