@@ -17,3 +17,4 @@ civis_projections/
 civis_data/
 scratch/
 mobility_covar_table.csv
+Inference/*/data/*
