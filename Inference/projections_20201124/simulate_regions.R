@@ -241,14 +241,14 @@ frac_recovered = plotout_noage %>%
 
 beta_init = unlogit(pars[[paste0('beta_values_1_', region_to_test)]], 0.9, 0.4)
 HFR_init = unlogit(pars[[paste0('HFR_values_1_', region_to_test)]], pars$HFR_max, pars$HFR_min)
-phi = pars[[paste0('phi_scale_', region_to_test)]] * HFR_init
+phi = unlogit(pars[[paste0('phi_scale_', region_to_test)]], pars$IFR_constraint,0)
 IHR_init = (pars$IFR_constraint - phi) / (HFR_init - phi)
-paras = list(frac_nonhosp_deaths = (phi * (1-IHR_init)) / (phi * (1-IHR_init) + IHR_init * HFR_init),
-                     sigma = 1/3.5,
-                     zeta_s = 1/1.5,
-                     mu_m = 1/15,
-                     gamma_m = 1/3.5,
-                     zeta_h = 1/4.2)
+paras = list(sigma = 1/3.5,
+             zeta_s = 1/1.5,
+             mu_m = 1/15,
+             gamma_m = 1/3.5,
+             zeta_h = 1/4.2,
+             phi = phi)
 r0pop = read.csv(covid_get_path('Data/covid_region_populations.csv')) %>% 
     summarize(POPULATION=sum(POPULATION))
 
@@ -258,10 +258,10 @@ R0_val = get_R0(region_cons=region_to_test,
        pop=r0pop,
        paras=paras,
        t=47,
-       IHR =IHR_init,
-       HFR=HFR_init)
+       IHR =IHR_init)
 
-Rt_scaling_constant = 5.05679
+Rt_scaling_constant = R0_val / beta_init
+print(paste(R0_val, Rt_scaling_constant, beta_init, phi, HFR_init, IHR_init))
 plotout_noage = bind_rows(plotout_noage %>% filter(Compartment != "Fraction recovered"), frac_recovered)
 Rt = plotout_noage %>%
   filter(Compartment == 'Transmission rate' | Compartment == 'Fraction recovered') %>%
@@ -298,7 +298,7 @@ plotout_noage = bind_rows(plotout_noage, gamma_df) %>% bind_rows(mu_df) %>% bind
 
 print("Plotting")
 ggplot(plotout_noage, aes(x=Date, y=Cases, color=Source, fill=Source)) +
-   stat_summary(fun=function(z){quantile(z,0.5, type=3), geom="line", size=0.75) +
+   stat_summary(fun=function(z){quantile(z,0.5,type=3)}, geom="line", size=0.75) +
    stat_summary(fun.min=function(z){quantile(z,0.025, type=3)}, fun.max=function(z){quantile(z,0.975, type=3)}, geom="ribbon", alpha=0.3, color=NA) +
    geom_point(plotting_data, mapping=aes(x=Date, y=Cases, fill=Source), size=0.9, alpha=0.7, pch=21) +
    facet_wrap(~factor(Compartment, levels=plot_order), scales='free_y', ncol=3) +

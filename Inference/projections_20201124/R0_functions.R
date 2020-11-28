@@ -63,13 +63,7 @@ get_R0 <- function(region_cons,
                    paras,
                    t,
                    contacts,
-                   IHR,
-                   HFR){
-
-    paras$phi = calculate_phi(f = paras$frac_nonhosp_deaths,
-                              HFR = HFR,
-                              IHR = IHR
-                              )
+                   IHR){
 
     # Set up disease-free equilibrium
     deq = list()
@@ -126,11 +120,11 @@ get_R0 <- function(region_cons,
                 dP2 = parse(text=sprintf("%s * P1%s - %s * P2%s", zeta_s * 3, ag, zeta_s * 3, ag))
                 dP3 = parse(text=sprintf("%s * P2%s - %s * P3%s", zeta_s * 3, ag, zeta_s * 3, ag))
                 
-                dIMdead1 = parse(text=sprintf("(1-%s) * %s * %s * P3%s - IMdead1%s * %s", IHR, zeta_s *3, phi[ag], ag, ag, mu_m *3))
+                dIMdead1 = parse(text=sprintf("(1-%s) * %s * %s * P3%s - IMdead1%s * %s", IHR, zeta_s *3, phi, ag, ag, mu_m *3))
                 dIMdead2 = parse(text=sprintf("%s * IMdead1%s - IMdead2%s * %s", mu_m *3, ag, ag, mu_m *3))
                 dIMdead3 = parse(text=sprintf("%s * IMdead2%s - IMdead3%s * %s", mu_m*3, ag, ag, mu_m *3))
                 
-                dIM1 = parse(text=sprintf("(1-%s) * %s * (1-%s) * P3%s - IM1%s * %s", IHR, zeta_s * 3, phi[ag], ag, ag, gamma_m *3))
+                dIM1 = parse(text=sprintf("(1-%s) * %s * (1-%s) * P3%s - IM1%s * %s", IHR, zeta_s * 3, phi, ag, ag, gamma_m *3))
                 dIM2 = parse(text=sprintf("%s * IM1%s - IM2%s * %s",  gamma_m*3, ag, ag, gamma_m *3))
                 dIM3 = parse(text=sprintf("%s * IM2%s - IM3%s * %s", gamma_m*3, ag, ag, gamma_m *3))
                 
