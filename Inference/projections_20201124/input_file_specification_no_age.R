@@ -31,7 +31,7 @@ if (debug.mif == T){
 }
 
 use_mle = T
-output_dir = sprintf('./%s/',model_name)
+output_dir = sprintf('./inference_output_%s/',model_name)
 
 # CSV that contains columns for the time and each of the covariates that you want to use
 # Note that the filepath should be specified RELATIVE to the covid_IL directory.

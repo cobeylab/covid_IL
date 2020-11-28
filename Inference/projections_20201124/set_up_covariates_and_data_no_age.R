@@ -1,6 +1,6 @@
 # Create result directory if it doesn't exist
 dir.create(file.path(output_dir), showWarnings = FALSE)
-human_output_dir = sprintf("./%s_outputs/", model_name)
+human_output_dir = sprintf("./projection_outputs_%s_outputs/", model_name)
 dir.create(file.path(human_output_dir), showWarnings = FALSE)
 
 ## Setting dates
