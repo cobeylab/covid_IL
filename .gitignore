@@ -24,3 +24,4 @@ Inference/*/agg_mif*.csv
 Forecasting/internal_plots/*
 internal_data/*
 *logs*
+*internal_plots*
