@@ -21,3 +21,4 @@ Inference/*/data/*
 Inference/*/projection_outputs_*/*
 Inference/*/inference_output_*/*
 Inference/*/agg_mif*.csv
+Forecasting/internal_plots/*
