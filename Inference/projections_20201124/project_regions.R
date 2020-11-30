@@ -335,6 +335,20 @@ Rt = plotout_noage %>%
   mutate(Compartment='R(t)')
 plotout_noage = bind_rows(plotout_noage, Rt)
 
+rt_model = Rt %>%
+  select(-Time) %>%
+  drop_na() %>%
+  group_by(Date) %>%
+  summarize(rt_model_med=quantile(Cases, 0.5, type=3),
+            rt_model_lower=quantile(Cases, 0.025, type=3),
+            rt_model_upper=quantile(Cases, 0.975, type=3)) %>%
+  mutate(geography_modeled = sprintf('covidregion_%s', region_to_test),
+         scenario_name = 'baseline') %>%
+  ungroup() %>%
+  rename(date=Date)
+
+write.csv(rt_model, sprintf('%s/model_rt_%s_%s.csv', human_output_dir, region_to_test, Sys.Date()-1), row.names=F)
+
 ## add in gamma and mu
 g0 = unlogit(pars[[paste0('inv_gamma_0_', region_to_test)]], pars$gamma_max, pars$gamma_min)
 gf = unlogit(pars[[paste0('inv_gamma_f_', region_to_test)]], pars$gamma_max, pars$gamma_min)
