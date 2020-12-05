@@ -1,13 +1,13 @@
-simend = '2020-11-23' # Set to last date in the EMR data
+simend = '2020-11-30' # Set to last date in the EMR data
 project_end = '2021-04-01'
 project_zoom = as.Date('2020-03-01')
 model_name = 'beta_hfr_mu_gamma_constphi_cdc'
 
 ## Data to fit
-ll_file = 'Inference/projections_20201124/data/ll_deaths_20201124.csv'
-emr_data_file = 'Inference/projections_20201124/data/emr_fit_long_20201124.csv'
-emr_report = 'Inference/projections_20201124/data/emr_report_long_20201124.csv'
-hosp_capacity_file = 'Inference/projections_20201124/data/capacity_weekday_average_20201124.csv'
+ll_file = 'Inference/projections_20201202_withICU_linelist/data/ll_deaths_20201201.csv'
+emr_data_file = 'Inference/projections_20201202_withICU_linelist/data/emr_fit_long_20201201.csv'
+emr_report = 'Inference/projections_20201202_withICU_linelist/data/emr_report_long_20201201.csv'
+hosp_capacity_file = 'Inference/projections_20201202_withICU_linelist/data/capacity_weekday_average_20201201.csv'
 debug.mif = F
 start_fit_at_mle = T
 mle_file =sprintf('old_mle_agg_mif_%s.csv', model_name)
@@ -35,7 +35,7 @@ output_dir = sprintf('./inference_output_%s/',model_name)
 
 # CSV that contains columns for the time and each of the covariates that you want to use
 # Note that the filepath should be specified RELATIVE to the covid_IL directory.
-beta_covariate = 'Inference/projections_20201124/data/beta_values_no_age.covar.cli_tpr.csv'
+beta_covariate = 'Inference/projections_20201202_withICU_linelist/data/beta_values_no_age.covar.cli_tpr.csv'
 beta_covariate_column = 'None' # Name of the transmission covariate you want to use
 beta_scale = 'Data/beta_scaling_mobility.csv'
 default_par_file = './default_parameter_values.csv'
@@ -49,19 +49,16 @@ intervention_start='2020-03-16'
 min_data_time_ICU = '2020-04-03'
 
 idph_filename = './idph_public_covid_region.csv' # Location of IDPH public data broken down by region
-dmeasFile = 'Inference/projections_20201124/dmeasure_no_age.c'
-init_file='Inference/projections_20201124/initializer_no_age.c'
-rmeasFile = 'Inference/projections_20201124/rmeasure_no_age.c'
-rprocFile = 'Inference/projections_20201124/rprocess_no_age_changepoint.c'
-function_file='Inference/projections_20201124/simulation_functions_no_age.R'
-icu_function_file='Inference/projections_20201124/simulation_functions_icu.R'
-rproc_icu_File = 'Inference/projections_20201124/rprocess_icu.c'
-init_icu_file='Inference/projections_20201124/initializer_icu.c'
+dmeasFile = 'Inference/projections_20201202_withICU_linelist/dmeasure_no_age.c'
+init_file='Inference/projections_20201202_withICU_linelist/initializer_no_age.c'
+rmeasFile = 'Inference/projections_20201202_withICU_linelist/rmeasure_no_age.c'
+rprocFile = 'Inference/projections_20201202_withICU_linelist/rprocess_no_age_changepoint.c'
+function_file='Inference/projections_20201202_withICU_linelist/simulation_functions_no_age.R'
+
 # all covariates
 fraction_underreported_file='internal_data/2020-11-23_IL_underrerporting.csv'
 nonhosp_deaths = 'internal_data/2020-10-24_IL_frac_deaths_nonhosp.csv'
 population_file = 'Data/covid_region_populations.csv'
 cli_file = 'internal_data/cli_admissions_2020-11-24.csv'
-icu_covar = 'Inference/projections_20201124/data/icu_covariates.csv'
 
 print('finished reading input files')

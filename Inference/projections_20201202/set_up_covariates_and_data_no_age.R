@@ -25,8 +25,6 @@ nonhosp_death_filename = covid_get_path(nonhosp_deaths)
 beta_covariate_filename = covid_get_path(beta_covariate)
 beta_scale_filename = covid_get_path(beta_scale)
 emr_reporting_filename = covid_get_path(emr_report)
-icu_covar_filename = covid_get_path(icu_covar)
-
 
 ## CSnippets
 print('Reading in CSnippets')
@@ -34,25 +32,21 @@ dmeasure_snippet <- read_Csnippet(dmeasFile)
 rprocess_snippet <- read_Csnippet(rprocFile)
 rinit_snippet <- read_Csnippet(initFile)
 rmeasure_snippet <- read_Csnippet(rmeasFile)
-
-rprocess_icu_snippet <- read_Csnippet(covid_get_path(rproc_icu_File))
-rinit_icu_snippet <- read_Csnippet(covid_get_path(init_icu_file))
-   
+    
 ## Fraction underreported
 print('Loading covariates')
 fraction_underreported = read.csv(fraction_underreported_filename)
 nonhosp_deaths = read.csv(nonhosp_death_filename)
 beta_cov = read.csv(beta_covariate_filename)
 beta_scale_covar = read.csv(beta_scale_filename)
-icu_covar = read.csv(icu_covar_filename)
 emr_report_covar = read.csv(emr_reporting_filename) %>%
     filter(covid_region %in% as.character(1:11)) %>%
-    select(time, covid_region, death_reporting, hosp_reporting) %>%
-    gather(Compartment, Reporting, death_reporting, hosp_reporting) %>%
+    select(time, covid_region, death_reporting, hosp_reporting, icu_reporting) %>%
+    gather(Compartment, Reporting, death_reporting, hosp_reporting, icu_reporting) %>%
     mutate(Compartment = paste0(Compartment, '_', covid_region)) %>%
     select(-covid_region) %>%
     spread(Compartment, Reporting) %>%
-    select(time, paste0('hosp_reporting_', 1:11), paste0('death_reporting_', 1:11))
+    select(time, paste0('hosp_reporting_', 1:11), paste0('death_reporting_', 1:11), paste0('icu_reporting_', 1:11))
     
 ## Population sizes
 print('Reading in population info')
@@ -76,20 +70,28 @@ hosp = read.csv(covid_get_path(emr_data_file)) %>%
   spread(covid_region, ObsHosp_1) %>%
   select(time, as.character(1:11))
 names(hosp) = c('time', paste0('ObsHosp_', 1:11)) 
-hosp_deaths = read.csv(covid_get_path(emr_data_file)) %>%
+
+icu_census = read.csv(covid_get_path(emr_data_file)) %>%
   filter(covid_region %in% 1:11) %>%
-  select(time, covid_region, ObsHospDeaths_1) %>%
-  spread(covid_region, ObsHospDeaths_1) %>%
+  select(time, covid_region, ObsICU_1) %>%
+  spread(covid_region, ObsICU_1) %>%
   select(time, as.character(1:11))
-names(hosp_deaths) = c('time', paste0('ObsHospDeaths_', 1:11))
+names(icu_census) = c('time', paste0('ObsICU_', 1:11))
 ll_deaths = read.csv(covid_get_path(ll_file)) %>%
   mutate(time = as.numeric(as.Date(date) - as.Date('2020-01-14'))) %>%
   select(time, covid_region, ll_deaths) %>%
   spread(covid_region, ll_deaths) %>%
   select(time, as.character(1:11))
 names(ll_deaths) = c('time', paste0('ObsDeaths_', 1:11))
+hosp_deaths = read.csv(covid_get_path(ll_file)) %>%
+  mutate(time = as.numeric(as.Date(date) - as.Date('2020-01-14'))) %>%
+  select(time, covid_region, ll_hosp_deaths) %>%
+  spread(covid_region, ll_hosp_deaths) %>%
+  select(time, as.character(1:11))
+names(hosp_deaths) = c('time', paste0('ObsHospDeaths_', 1:11))
 fitting_data = full_join(hosp, hosp_deaths, by='time') %>%
   full_join(ll_deaths, by='time') %>%
+  full_join(icu_census, by='time') %>%
   arrange(time)
 NA_row = data.frame(time=min(fitting_data$time) -1)
 fitting_data = full_join(NA_row, fitting_data)
