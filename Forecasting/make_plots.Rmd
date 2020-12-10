@@ -4,10 +4,11 @@ library(tidyr)
 library(ggplot2)
 library(tibble)
 
-last_date = as.Date('2020-11-23')
+last_date = as.Date('2020-12-07')
 first_date = as.Date('2020-03-01')
-fit_results = './latest_fit_results/uchicago_20201124.csv'
-cdc_hosp_file = '../Data/reported_hospital_utilization_timeseries_20201122_2140.csv'
+last_plot_date = last_date + 30
+fit_results = './latest_fit_results/uchicago_20201208.csv'
+cdc_hosp_file = '../Data/reported_hospital_utilization_timeseries_20201206_2146.csv'
 
 covidregion_map = c(covidregion_1 = 'COVID region 1',
                     covidregion_2 = 'COVID region 2',
@@ -34,7 +35,7 @@ public_data = read.csv('../Data/idph_public_covid_region.csv') %>%
 public_statewide = read.csv('../Data/idph_public_covid_region.csv') %>%
     mutate(date=as.Date(date)) %>%
     select(date, new_deaths) %>%
-    filter(date >= first_date, date<=as.Date('2020-12-31')) %>%
+    filter(date >= first_date, date<=last_plot_date) %>%
     dplyr::group_by(date) %>%
     summarize(new_deaths = sum(new_deaths)) %>%
     ungroup() %>%
@@ -47,7 +48,7 @@ public_data = public_statewide %>%
 
 projections = read.csv(fit_results) %>%
     mutate(date = as.Date(date)) %>%
-    filter(date >= first_date, date<=as.Date('2020-12-31'))
+    filter(date >= first_date, date<=last_plot_date)
 
 populations = read.csv('../Data/covid_region_populations.csv') %>%
     group_by(covid_region) %>%
@@ -62,6 +63,7 @@ pop_state = read.csv('../Data/covid_region_populations.csv') %>%
     mutate(geography_modeled = 'illinois') %>%
     select(geography_modeled, pop) %>%
     bind_rows(populations)
+
 populations=pop_state
 
 cdchosp = read.csv(cdc_hosp_file) %>% 
@@ -101,8 +103,8 @@ ggsave('plots/uc_deaths.png')
 
 projections %>%
     ggplot(aes(x=date, fill='Model', color='Model')) +
-    geom_line(aes(y=hosp_bed_median)) +
-    geom_ribbon(aes(ymin=hosp_bed_lower, ymax=hosp_bed_upper), alpha=0.2, color=NA) +
+    geom_line(aes(y=total_hosp_median)) +
+    geom_ribbon(aes(ymin=total_hosp_lower, ymax=total_hosp_upper), alpha=0.2, color=NA) +
     geom_point(cdchosp, mapping=aes(x=date, y=hosp_census, color='Observed', fill='Observed'), size=0.75, alpha=0.5) +
     facet_wrap(~geography_modeled, scales='free_y') +
     geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
@@ -154,3 +156,52 @@ projections %>%
 
 ggsave('plots/uc_seroprevalence.png')
 ```
+```{r}
+populations = read.csv('../Data/covid_region_populations.csv') %>%
+    group_by(covid_region) %>%
+    summarize(population = sum(POPULATION)) %>%
+    ungroup() %>%
+    mutate(geography_modeled = paste0('covidregion_', as.character(covid_region))) %>%
+    mutate(weight = population / sum(population)) %>%
+    select(geography_modeled, weight) 
+
+
+foreach(r=1:11, .combine='rbind') %do%{
+    read.csv(sprintf("model_rt_estimates/model_rt_%s_2020-12-08.csv", r)) %>%
+        mutate(date =as.Date(date))
+} -> rt_model
+
+plotdf = read.csv(fit_results) %>%
+    mutate(date=as.Date(date)) %>%
+    full_join(rt_model, by=c('date','geography_modeled')) %>%
+    full_join(populations, by="geography_modeled") %>%
+    filter(date <= last_date) %>%
+    group_by(date) %>%
+    mutate(rt_model_med = ifelse(geography_modeled == 'illinois', sum(rt_model_med * weight, na.rm=T), rt_model_med),
+        rt_model_lower = ifelse(geography_modeled == 'illinois', sum(rt_model_lower * weight, na.rm=T), rt_model_lower),
+        rt_model_upper = ifelse(geography_modeled == 'illinois', sum(rt_model_upper * weight, na.rm=T), rt_model_upper)) %>%
+    ungroup() %>%
+    mutate(geography_modeled = covidregion_map[geography_modeled]) %>%
+    mutate(geography_modeled = factor(geography_modeled, levels = c('Illinois', paste0('COVID region ', 1:11))))
+
+ggplot(plotdf) +
+    geom_line(aes(x=date, y=rt_median, color="EpiNow2"), size=0.75) +
+    geom_line(aes(x=date, y=rt_model_med, color="Model"), size=0.75) +
+    geom_ribbon(aes(x=date, ymin=rt_lower, ymax=rt_upper, fill="EpiNow2"), alpha=0.3) +
+    geom_ribbon(aes(x=date, ymin=rt_model_lower, ymax=rt_model_upper, fill="Model"), alpha=0.3) +
+    scale_fill_brewer(palette="Set1") +
+    scale_color_brewer(palette="Set1") +
+    xlab("Date") +
+    ylab("R(t)") +
+    theme_bw() +
+    labs(fill="", color="", y=expression(R[eff.]), linetype="") +
+    geom_hline(yintercept=1) +
+    theme(legend.position="bottom") +
+    facet_wrap(~geography_modeled) +
+    coord_cartesian(ylim=c(0.5, 2)) +
+    geom_vline(aes(xintercept = last_date, linetype=format(last_date, '%b %d'))) +
+    scale_linetype_manual(values='dashed')
+    
+ggsave('../Rt/plots/rt_comparison.png')
+```
+

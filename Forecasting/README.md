@@ -26,6 +26,9 @@ Figure 4: Estimated fraction of the population that has recovered in the state o
 ![Figure 4](./plots/uc_seroprevalence.png)
 
 ## Changelog
+### 2020-12-10
+* Changed changepoint times for regions 1, 2, 4, 9, and 11 based on fitting a segmented regression to R(t) estimates.
+
 ### 2020-11-25
 * Removed age structure from model.
 * Fitted separately to 11 COVID regions.
