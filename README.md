@@ -15,6 +15,7 @@ People who enter the presymptomatic infectious class (P) either develop symptoms
 We assume that the duration of infectiousness for asymptomatic infections is the same as the duration of infectiousness for mild symptomatic infections, and therefore do not explicitly model an asymptomatic compartment.
 Presymptomatic infections are divided into non-hospitalized infections (I<sub>R</sub> and I<sub>D</sub>) and infections that require hospitalization (I<sub>H</sub>).
 Hospitalized infections are either discharged (H<sub>R</sub>) or die in the hospital (H<sub>D</sub>).
+To model ICU occupancy, we sample a fraction of all hospital admissions (p<sub>ICU</sub>) and simulate their trajectory through the ICU (H<sub>pre-ICU</sub> and H<sub>ICU</sub>).
 
 ![Figure 1](model_diagram.png)
 Rate parameters (blue) determine the average amount of time in each compartment.
@@ -31,7 +32,7 @@ Incomplete hospital reporting means that not all deaths and hospital admissions 
 Although the model tracks all underlying infections and deaths, it assumes only a fraction will be confirmed and counted.
 
 ### Inference
-For each region in Illinois, we infer the transmission rate at 13 timepoints and assume that the transmission rate changes linearly between each timepoint.
+For each region in Illinois, we infer the transmission rate at several timepoints and assume that the transmission rate changes linearly between each timepoint.
 We also infer region-specific parameters governing the hospital course: the infection hospitalization ratio (IHR), the time-varying hospitalization fatality ratio (HFR) and the time-varying duration of the hospital stay.
 To account for deaths that occur without hospitalization, we infer a region-specific probability that a non-hospitalized infection ends in death.  
 Other parameters are fixed based on values from the literature ([Parameters](./Parameters)).
