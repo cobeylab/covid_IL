@@ -2,7 +2,7 @@
 
 ## Summary
 
-We calibrated our model to infer the number of people initially infected in each region of Illinois (see [Data](../Data)); region-specific transmission rates at 13 changepoints; the region-specific, time-varying hospitalization fatality rate (HFR); the region-specific, time-varying duration of the hospital stay; and the region-specific fraction of non-hospitalized infections that result in death.
+We calibrated our model to infer the number of people initially infected in each region of Illinois (see [Data](../Data)); region-specific transmission rates; the region-specific, time-varying hospitalization fatality rate (HFR); the region-specific, time-varying duration of the hospital stay; the region-specific fraction of non-hospitalized infections that result in death; the region-specific, time-varying duration of the ICU stay; and the region-specific, time-varying fraction of hospital admissions that go to the ICU.
 Other parameters were fixed ([Parameters](.../Parameters)).
 
 From a set of parameters, we can simulate both the hidden (latent) states (e.g., underlying fraction infected and immune) and observations (e.g., recorded COVID-19 deaths) of the model.
