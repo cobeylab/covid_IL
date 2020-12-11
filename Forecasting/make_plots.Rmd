@@ -7,7 +7,7 @@ library(tibble)
 last_date = as.Date('2020-12-07')
 first_date = as.Date('2020-03-01')
 last_plot_date = last_date + 30
-fit_results = './latest_fit_results/uchicago_20201208.csv'
+fit_results = './latest_fit_results/uchicago_20201211.csv'
 cdc_hosp_file = '../Data/reported_hospital_utilization_timeseries_20201206_2146.csv'
 
 covidregion_map = c(covidregion_1 = 'COVID region 1',
@@ -167,7 +167,7 @@ populations = read.csv('../Data/covid_region_populations.csv') %>%
 
 
 foreach(r=1:11, .combine='rbind') %do%{
-    read.csv(sprintf("model_rt_estimates/model_rt_%s_2020-12-08.csv", r)) %>%
+    read.csv(sprintf("model_rt_estimates/model_rt_%s_2020-12-10.csv", r)) %>%
         mutate(date =as.Date(date))
 } -> rt_model
 
