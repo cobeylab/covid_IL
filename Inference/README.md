@@ -11,7 +11,7 @@ To calculate the likelihood, we use a [particle filter](https://kingaa.github.io
 To find the best-fitting set of parameters, we use the [iterated filtering method](https://kingaa.github.io/sbied/mif/mif.html) also implemented in `pomp`.
 Briefly, through repeated rounds of simulating the dynamics and then perturbing parameter values, this approach can find the parameter values that can best reproduce the data.
 
-Code used to fit the model to new data are stored in dated directories. The most recent fits were produced with the code in [projections_20201124](./projections_20201124).
+Code used to fit the model to new data are stored in dated directories. The most recent fits were produced with the code in [projections_20201209](./projections_20201209).
 
 ## Model file descriptions
 
