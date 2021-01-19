@@ -4,11 +4,11 @@ library(tidyr)
 library(ggplot2)
 library(tibble)
 
-last_date = as.Date('2020-12-07')
+last_date = as.Date('2021-01-14')
 first_date = as.Date('2020-03-01')
 last_plot_date = last_date + 30
-fit_results = './latest_fit_results/uchicago_20201211.csv'
-cdc_hosp_file = '../Data/reported_hospital_utilization_timeseries_20201206_2146.csv'
+fit_results = './latest_fit_results/uchicago_github_20210114.csv'
+cdc_hosp_file = '../Data/reported_hospital_utilization_timeseries_20210118_1604.csv'
 
 covidregion_map = c(covidregion_1 = 'COVID region 1',
                     covidregion_2 = 'COVID region 2',
@@ -96,7 +96,8 @@ projections %>%
     scale_linetype_manual(values='dashed') +
     xlab('Date') +
     labs(color='', fill='', linetype='')+
-    theme(legend.position = 'bottom')
+    theme(legend.position = 'bottom')+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggsave('plots/uc_deaths.png')
 
@@ -115,7 +116,8 @@ projections %>%
     scale_linetype_manual(values='dashed') +
     xlab('Date') +
     labs(color='', fill='', linetype='')+
-    theme(legend.position = 'bottom')
+    theme(legend.position = 'bottom')+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave('plots/uc_hosp.png')
 
 projections %>%
@@ -133,11 +135,13 @@ projections %>%
     labs(color='', fill='', linetype='')+
     theme(legend.position = 'bottom') +
     #guides(color=F, fill=F) +
-    scale_y_continuous(labels=scales::percent)
+    scale_y_continuous(labels=scales::percent)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggsave('plots/uc_prevalence.png')
 
 projections %>%
+    mutate(date = date + 14) %>%
     ggplot(aes(x=date, fill='Model', color='Model')) +
     geom_line(aes(y=recovered_median/pop)) +
     geom_ribbon(aes(ymin=recovered_lower/pop, ymax=recovered_upper/pop), alpha=0.2, color=NA) +
@@ -152,10 +156,14 @@ projections %>%
     labs(color='', fill='', linetype='')+
     theme(legend.position = 'bottom') +
     #guides(color=F, fill=F) +
-    scale_y_continuous(labels=scales::percent)
+    scale_y_continuous(labels=scales::percent) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggsave('plots/uc_seroprevalence.png')
 ```
+
+
+
 ```{r}
 populations = read.csv('../Data/covid_region_populations.csv') %>%
     group_by(covid_region) %>%
@@ -167,7 +175,7 @@ populations = read.csv('../Data/covid_region_populations.csv') %>%
 
 
 foreach(r=1:11, .combine='rbind') %do%{
-    read.csv(sprintf("model_rt_estimates/model_rt_%s_2020-12-10.csv", r)) %>%
+    read.csv(sprintf("model_rt_estimates/model_rt_%s_2021-01-12.csv", r)) %>%
         mutate(date =as.Date(date))
 } -> rt_model
 

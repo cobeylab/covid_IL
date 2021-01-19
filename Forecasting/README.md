@@ -26,6 +26,10 @@ Figure 4: Estimated fraction of the population that has recovered in the state o
 ![Figure 4](./plots/uc_seroprevalence.png)
 
 ## Changelog
+
+### 2021-01-19
+* Added additional changepoint in transmission for all reigons on December 31.
+
 ### 2020-12-11
 * Updated excess death estimates.
 
