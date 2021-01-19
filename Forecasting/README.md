@@ -29,6 +29,7 @@ Figure 4: Estimated fraction of the population that has recovered in the state o
 
 ### 2021-01-19
 * Added additional changepoint in transmission for all reigons on December 31.
+* Projections now start at latent states generated from particle filtering.
 
 ### 2020-12-11
 * Updated excess death estimates.
