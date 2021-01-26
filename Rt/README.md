@@ -10,3 +10,8 @@ We estimated R<sub>eff.</sub> using two different methods. First, we used the [E
 
 Figure 1: Comparison of R<sub>eff.</sub> estimated from CLI with EpiNow2 (red) and R<sub>eff.</sub> inferred by our dynamical model (blue). The dashed line shows the latest date in the data used to calibrate the dynamical model. At the time of estimation, CLI data were available through January 9, 2021. 
 ![Figure 2](./plots/rt_comparison.png)
+
+## Changelog
+
+### 2021-01-26
+* Changed delay distribution to use data from [Faes et al.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7589278/).

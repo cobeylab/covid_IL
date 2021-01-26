@@ -1,10 +1,29 @@
+fit_lnorm_quantiles <- function(
+  quantile.values= c(0, 2, 5,8,20),
+  quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975),
+  mean.delay=5.6){
+  # Fit a lognormal to quantile data on time from symptom onset to hospital admission
+  # from Belgium (Faes, et al.)
+  fun_to_optimize = function(par){
+      sd.est = par
+      mu.est = log(mean.delay) - sd.est^2/2
+      q = qlnorm(quantiles, meanlog=mu.est, sdlog = sd.est)
+      return (-sum((q - quantile.values)^2))
+  }
+  best.sd = optimize(f=fun_to_optimize, 
+           lower=0.1,
+           upper=3,
+           maximum = T)$maximum
+  best.mean = log(mean.delay) - best.sd^2/2
+
+  return(list(meanlog.fit=best.mean, sdlog.fit=best.sd))
+
+}
 
 run_epinow2 <- function(dat_df,  # Data used in estimation
                         obs_colname, # Name of column holding observations within data_df
-                        dat_type, # Can be 'cases', 'deaths' or 'hospitalizations'
                         prior_smoothing_window = 7, # Smoothing window to use on the prior. Default is 7
                         dbug, # If true, run really short chains.
-                        #midway = FALSE,
                         output_folder = 'rough-rt-approach'){
   
   
@@ -19,36 +38,17 @@ run_epinow2 <- function(dat_df,  # Data used in estimation
   generation_time <- EpiNow2::get_generation_time('SARS-CoV-2', source = 'ganyani')
   generation_time$notes = 'ganyani et al'
   ## See EpiNow2::generation_intervals for source info
-  
-  cd_post <- read_rds('../data/fitted_delays/delay_symptom_to_report_posterior_lognorm.rds') %>%
-    bind_rows(.id = 'par')
-  case_rep_delay <- list(mean = median(cd_post$mu), ## Very rough estimates based on carline 
-                         mean_sd = sd(cd_post$mu), 
-                         sd = median(cd_post$sigma),
-                         sd_sd = sd(cd_post$sigma),
-                         max = 30,
-                         notes = 'Phils fitted estimates')
-  
-  death_rep_delay <- list(mean = 2.86, ## From Linton et al. Table 2 (J. Clin. Med. 2020, 9, 538; doi:10.3390/jcm9020538)
-                          mean_sd = 1.98,   
-                          sd = 0.53,
-                          sd_sd = 2.03,
-                          max = 30,
-                          notes = 'From Linton et al. Table 2. (J. Clin. Med. 2020, 9, 538; doi:10.3390/jcm9020538)')
-  
-  hospital_rep_delay <- list(mean = 2.21, ## Fitted to HK data, similar to Linton et al
-                             mean_sd = 0.1, 
-                             sd = 0.49,
-                             sd_sd = 0.1,
-                             max = 30,
-                             notes = 'From HK data. Results were similar to Linton et al.')
-  
-  stopifnot(dat_type %in% c('cases', 'deaths', 'hospitalizations'))
-  if(dat_type == 'cases')   delay <- case_rep_delay  
-  if(dat_type == 'deaths')   delay <- death_rep_delay 
-  if(dat_type == 'hospitalizations')   delay <- hospital_rep_delay 
-  
-  
+
+  best_fit = fit_lnorm_quantiles()
+
+  # DELAY FROM SYMPTOM ONSET TO HOSPITAL ADMISSION
+  delay <- list(mean =best_fit[['meanlog.fit']],
+                         mean_sd = 0.1, 
+                         sd = best_fit[['sdlog.fit']],
+                         sd_sd = 0.1,
+                         max = 15,
+                         notes = 'Fitted to Faes et al.')
+
   write_rds(generation_time, sprintf('%s/gen_interval.rds', output_folder))
   write_rds(incubation_period, sprintf('%s/incubation_pd.rds', output_folder))
   write_rds(delay, sprintf('%s/delay.rds', output_folder))
@@ -59,9 +59,12 @@ run_epinow2 <- function(dat_df,  # Data used in estimation
   par(mfrow = c(2,2))
   xx = seq(0, 30, by = 0.01)
   ## Reporting delay --
-  plot(xx, dlnorm(xx, delay$mean, delay$sd), 
+  if (length(delay) > 0){
+      plot(xx, dlnorm(xx, delay$mean, delay$sd), 
        type = 'l', main = sprintf('Rep. delay (lognormal) logmean=%2.2f, logsd=%2.2f\nsource - %s', delay$mean, delay$sd, delay$notes), 
        xlab = 'days', ylab = 'dens')
+  }
+
   ## Generation interval ---
   plot(xx, 
        dgamma(xx, shape = with(generation_time, get_shape(mean, sd^2)), 
@@ -87,8 +90,7 @@ run_epinow2 <- function(dat_df,  # Data used in estimation
   ## Fit to synthetic case observations
   rt_estimates <- EpiNow2::epinow(reported_cases = format_dat(obs_colname, dat_df), 
                                   generation_time = generation_time,
-                                  delays = list(reporting_delay = delay,
-                                                incubation_period = incubation_period), 
+                                  delays = list(reporting_delay= delay, incubation_period=incubation_period), 
                                   method = 'exact',
                                   CrIs = c(.8, .9, .95),
                                   prior_smoothing_window = prior_smoothing_window,
@@ -99,18 +101,4 @@ run_epinow2 <- function(dat_df,  # Data used in estimation
                                                    control = list(adapt_delta = 0.9),
                                                    cores = 4),
                                   target_folder = paste0(output_folder))
-  
-  
-  # if(!debug & midway){
-  #   ## Fit to synthetic case observations
-  #   rt_estimates <- EpiNow2::epinow(reported_cases = format_dat(obs_colname, dat_df), 
-  #                                   generation_time = generation_time,
-  #                                   reporting_delay = delay,
-  #                                   incubation_period = incubation_period, 
-  #                                  # prior_smoothing_window = prior_smoothing_window,
-  #                                   rt_prior = list(mean = 2, sd = 1), horizon = 0,
-  #                                   samples = 2000, warmup = 500, cores = 4,
-  #                                   chains = 4, verbose = TRUE,
-  #                                   target_folder = paste0(output_folder))
-  # }
 }
