@@ -4,10 +4,10 @@ library(tidyr)
 library(ggplot2)
 library(tibble)
 
-last_date = as.Date('2021-01-14')
+last_date = as.Date('2021-01-19')
 first_date = as.Date('2020-03-01')
 last_plot_date = last_date + 30
-fit_results = './latest_fit_results/uchicago_github_20210114.csv'
+fit_results = './latest_fit_results/uchicago_github_20210120.csv'
 cdc_hosp_file = '../Data/reported_hospital_utilization_timeseries_20210118_1604.csv'
 
 covidregion_map = c(covidregion_1 = 'COVID region 1',
@@ -175,7 +175,7 @@ populations = read.csv('../Data/covid_region_populations.csv') %>%
 
 
 foreach(r=1:11, .combine='rbind') %do%{
-    read.csv(sprintf("model_rt_estimates/model_rt_%s_2021-01-12.csv", r)) %>%
+    read.csv(sprintf("model_rt_estimates/model_rt_%s_%s.csv", r, last_date)) %>%
         mutate(date =as.Date(date))
 } -> rt_model
 

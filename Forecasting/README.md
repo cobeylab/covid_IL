@@ -27,7 +27,11 @@ Figure 4: Estimated fraction of the population that has recovered in the state o
 
 ## Changelog
 
-### 2021-01-19
+### 2021-01-26 (for week of 2021-01-18)
+* Use negative binomial observation model for non-hospital deaths.
+* Switched back to pre 2021-01-19 projection method.
+
+### 2021-01-19 (for week of 2021-01-11)
 * Added additional changepoint in transmission for all reigons on December 31.
 * Projections now start at latent states generated from particle filtering.
 
