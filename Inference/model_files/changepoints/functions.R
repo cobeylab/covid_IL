@@ -7,10 +7,8 @@ simulate_pomp_covid <- function(
   input_params, 
   delta_t, 
   population_list, 
-  death_reporting_covar, # covariates to calculate death reporting
-  emr_report_covar,
-  beta_covar=NULL, # covariate of raw beta values
-  beta_scale_covar=NULL, # covariate of values to scale beta, e.g., mobility
+  region_covars,
+  shared_covars,
   seed = NULL,
   format = 'data.frame',
   time_column='time',
@@ -55,14 +53,8 @@ simulate_pomp_covid <- function(
               "gamma_m",
               "zeta_h",
               "pre_icu_rate",
-              "mu_min",
-              "mu_max",
               "ICU_min",
               "ICU_max",
-              "gamma_min",
-              "gamma_max",
-              "zeta_icu_min",
-              "zeta_icu_max",
               "HFR_min",
               "HFR_max",
               "hosp_t_min",
@@ -87,9 +79,8 @@ simulate_pomp_covid <- function(
   # Set up covariate table for pomp
   covar_table_interventions <- simulate_pomp_covid__init_covariate_table(
     input_params, 
-    beta_covar,
-    death_reporting_covar,
-    emr_report_covar
+    region_covars,
+    shared_covars
   )
 
   covar_table <- covariate_table(
@@ -294,14 +285,8 @@ simulate_pomp_covid__init_parameters <- function(
       "pre_icu_rate"=1/inv_pre_icu_rate,
 
       # Time-varying params
-      "mu_min"=mu_min,
-      "mu_max"=mu_max,
       "ICU_min"=ICU_min,
       "ICU_max"=ICU_max,
-      "gamma_min"=gamma_min,
-      "gamma_max"=gamma_max,
-      "zeta_icu_min"=zeta_icu_min,
-      "zeta_icu_max"=zeta_icu_max,
       "HFR_min"=HFR_min,
       "HFR_max"=HFR_max,
       "hosp_t_min"=hosp_t_min,
@@ -327,25 +312,6 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("phi_scale_",c(1:n_regions))] = unlist(
         unlist(input_params[paste0('phi_scale_', c(1:n_regions))])
       )
-    params[paste0("inv_mu_0_",c(1:n_regions))] = unlist(
-        unlist(input_params[paste0('inv_mu_0_', c(1:n_regions))])
-      )
-    params[paste0("inv_gamma_0_",c(1:n_regions))] = unlist(
-        unlist(input_params[paste0('inv_gamma_0_', c(1:n_regions))])
-      )
-    params[paste0("inv_zeta_icu_0_",c(1:n_regions))] = unlist(
-        unlist(input_params[paste0('inv_zeta_icu_0_', c(1:n_regions))])
-      )
-    params[paste0("inv_zeta_icu_f_",c(1:n_regions))] = unlist(
-        unlist(input_params[paste0('inv_zeta_icu_f_', c(1:n_regions))])
-      )
-    params[paste0("inv_gamma_f_",c(1:n_regions))] = unlist(
-        unlist(input_params[paste0('inv_gamma_f_', c(1:n_regions))])
-      )
-    params[paste0("inv_mu_f_",c(1:n_regions))] = unlist(
-        unlist(input_params[paste0('inv_mu_f_', c(1:n_regions))])
-      )
-
     # Region and changepoint specific
     for (region in 1:n_regions){
       eval_str = paste0('n_changepoints_',region)
@@ -402,14 +368,12 @@ simulate_pomp_covid__init_parameters <- function(
 }
 
 simulate_pomp_covid__init_covariate_table <- function(input_params, 
-  beta_covar, 
-  death_reporting_covar,
-  emr_report_covar) {
+  region_covars,
+  shared_covars) {
     
-  covar_table_interventions <- data.frame(time = c(1:input_params$tmax))
-  # add emr_reporting
-  covar_table_interventions = left_join(covar_table_interventions, emr_report_covar, by='time')
-
+  covar_table_interventions <- data.frame(time = c(1:500))
+  # add  region-specific covars
+  covar_table_interventions = left_join(covar_table_interventions, region_covars, by='time')
   if(input_params$region_to_test > 0){
     times = covar_table_interventions$time
     cols = names(covar_table_interventions)
@@ -420,12 +384,8 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
     covar_table_interventions = covar_table_interventions %>% mutate(time=times)
   }
 
-  # add death underreporting which is NOT region-specific
-  covar_table_interventions = left_join(covar_table_interventions, death_reporting_covar, by='time')
-  # add betas
-  if (!is.null(beta_covar)){
-    covar_table_interventions = left_join(covar_table_interventions, beta_covar, by='time')
-  }
+  # add non-region-specific covars
+  covar_table_interventions = left_join(covar_table_interventions, shared_covars, by='time')
   covar_table_interventions
 }
  
@@ -653,7 +613,7 @@ get_Rt = function(df.in, new_pars, region_to_test){
                    zeta_s = 1/1.5,
                    mu_m = 1/15,
                    gamma_m = 1/3.5,
-                   zeta_h = 1/4.2,
+                   zeta_h = 1/5.6,
                    phi = phi)
       r0pop = read.csv(covid_get_path('Data/covid_region_populations.csv')) %>% 
           summarize(POPULATION=sum(POPULATION))
@@ -735,33 +695,16 @@ plot_generic = function(alloutputs,
   R0_val = Rtoutputs$R0
   plotout_noage = bind_rows(plotout_noage, Rt)
   all_times = as.numeric(unique(plotout_noage$Date) - as.Date('2020-01-14'))
-  m = get_time_varying_pars(new_pars[grep(names(new_pars), pattern="inv_mu_*")],
-      new_pars[['mu_max']],
-      new_pars[['mu_min']],
-      c(new_pars[c('hosp_t_min', 'hosp_t_max')]),
-      all_times)
-  g  =get_time_varying_pars(new_pars[grep(names(new_pars), pattern="inv_gamma_*")],
-      new_pars[['gamma_max']],
-      new_pars[['gamma_min']],
-      c(new_pars[c('hosp_t_min', 'hosp_t_max')]),
-      all_times)
-  zicu = get_time_varying_pars(new_pars[grep(names(new_pars), pattern="inv_zeta_icu_*")],
-      new_pars[['zeta_icu_max']],
-      new_pars[['zeta_icu_min']],
-      c(new_pars[c('hosp_t_min', 'hosp_t_max')]),
-      all_times)
+
   icuf = get_time_varying_pars(new_pars[grep(names(new_pars), pattern="ICU_values_*")],
       new_pars[['ICU_max']],
       new_pars[['ICU_min']],
       new_pars[grep(names(new_pars), pattern="ICU_changepoint_values_*")],
       all_times)
 
-  gamma_df = data.frame(Date = as.Date('2020-01-14') + all_times, Compartment='Hospital duration (recover)', Cases=g, Source='Simulation')
-  mu_df = data.frame(Date = as.Date('2020-01-14') + all_times, Compartment='Hospital duration (death)', Cases=m, Source='Simulation')
-  zeta_df = data.frame(Date = as.Date('2020-01-14') + all_times, Compartment='ICU duration', Cases=zicu, Source='Simulation')
   icu_frac_df = data.frame(Date = as.Date('2020-01-14') + all_times, Compartment='ICU fraction', Cases=icuf, Source='Simulation')
 
-  plotout_noage = bind_rows(plotout_noage, gamma_df) %>% bind_rows(mu_df) %>% bind_rows(zeta_df) %>% bind_rows(icu_frac_df)
+  plotout_noage = bind_rows(plotout_noage, icu_frac_df)
 
   init_infect = round(popfinal[[region_to_test]] * new_pars[[paste0('num_init_', 1)]])
 

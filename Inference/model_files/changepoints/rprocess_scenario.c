@@ -13,10 +13,13 @@
 
 // region-specific fraction of non-hospitalized deaths
   const double *phi_scale = &phi_scale_1;
-  const double *inv_mu_0 = &inv_mu_0_1;
-  const double *inv_mu_f = &inv_mu_f_1;
-  const double *inv_gamma_0 = &inv_gamma_0_1;
-  const double *inv_gamma_f = &inv_gamma_f_1;
+const double *inv_mu_h = &inv_mu_h_1;
+
+const double *inv_gamma_h = &inv_gamma_h_1;
+const double *inv_gamma_h_intercept = &inv_gamma_h_intercept_1;
+
+const double *inv_zeta_icu = &inv_zeta_icu_1;
+const double *inv_zeta_icu_intercept = &inv_zeta_icu_intercept_1;
 // region-specific transmission baseline parameter for scaling
   const double *changepoint_values = &changepoints_1_1;
   const double *n_changepoints = &n_changepoints_1;
@@ -130,10 +133,16 @@ for (int region=0; region<n_regions; region += 1){
     }
     DeathReportTrack[region] = nhd_report;
 
-    double gamma_h = 1/get_par_value(unlogit(inv_gamma_0[region], gamma_max, gamma_min), unlogit(inv_gamma_f[region], gamma_max, gamma_min), hosp_t_min, hosp_t_max, t); 
-    double mu_h = 1/get_par_value(unlogit(inv_mu_0[region], mu_max, mu_min), unlogit(inv_mu_f[region], mu_max, mu_min), hosp_t_min, hosp_t_max, t); 
-    double zeta_icu = 1/get_par_value(unlogit(inv_zeta_icu_0[region], zeta_icu_max, zeta_icu_min), unlogit(inv_zeta_icu_f[region], zeta_icu_max, zeta_icu_min), hosp_t_min, hosp_t_max, t); 
-
+    double gamma_h = 1 / (inv_gamma_h[region] + inv_gamma_h_intercept[region]);
+    double mu_h = 1/ (inv_mu_h[region]);
+    double zeta_icu = 1/(inv_zeta_icu[region] + inv_zeta_icu_intercept[region]);
+    if (inv_gamma_h[region] + inv_gamma_h_intercept[region] <=0 ){
+      gamma_h = 1000;
+    }
+    if (inv_zeta_icu[region] + inv_zeta_icu_intercept[region] <=0){
+      zeta_icu = 1000;
+    }
+    
     // Figure out total infectious
       double infectious = get_sum(region, alpha_P_int, P) + get_sum(region, alpha_IM_int, IM) + get_sum(region, alpha_IM_int, IM_dead) + get_sum(region, alpha_IS_int, IS);
       double infectious_new = get_sum(region, alpha_P_int, Pvar) + get_sum(region, alpha_IM_int, IMvar) + get_sum(region, alpha_IM_int, IM_deadvar) + get_sum(region, alpha_IS_int, ISvar);
