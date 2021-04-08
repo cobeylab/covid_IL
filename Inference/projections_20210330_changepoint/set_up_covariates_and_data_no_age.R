@@ -1,0 +1,92 @@
+# Create result directory if it doesn't exist
+dir.create(file.path(output_dir), showWarnings = FALSE)
+human_output_dir = sprintf("./projection_outputs_%s_outputs/", model_name)
+dir.create(file.path(human_output_dir), showWarnings = FALSE)
+
+## Setting dates
+print('Setting dates')
+simstart = convert_date_to_time(simstart, t_ref)
+simend = convert_date_to_time(simend, t_ref)
+min_data_time = convert_date_to_time(min_data_time, t_ref)
+intervention_start = convert_date_to_time(intervention_start, t_ref)
+project_end = convert_date_to_time(project_end, t_ref)
+min_data_time_ICU = as.Date(min_data_time_ICU)
+
+## Filenames
+print('Reading in files')
+# covariates
+fraction_underreported_filename = covid_get_path(fraction_underreported_file)
+emr_reporting_filename = covid_get_path(emr_report)
+frac_averted_filename = covid_get_path(frac_averted_filename)
+
+## CSnippets
+print('Reading in CSnippets')
+dmeasure_snippet <- read_Csnippet(covid_get_path(dmeasFile))
+rprocess_snippet <- read_Csnippet(covid_get_path(rprocFile))
+rprocess_scenario_snippet <- read_Csnippet(covid_get_path(rprocScenarioFile))
+rinit_snippet <- read_Csnippet(covid_get_path(init_file))
+rmeasure_snippet <- read_Csnippet(covid_get_path(rmeasFile))
+global_snippet <- read_Csnippet(covid_get_path(globalFile))
+    
+## Fraction underreported
+print('Loading covariates')
+fraction_underreported = read.csv(fraction_underreported_filename)
+frac_averted_df = read.csv(frac_averted_filename)
+emr_report_covar = read.csv(emr_reporting_filename) %>%
+    filter(covid_region %in% as.character(1:11)) %>%
+    select(time, covid_region, death_reporting, hosp_reporting, icu_reporting) %>%
+    gather(Compartment, Reporting, death_reporting, hosp_reporting, icu_reporting) %>%
+    mutate(Compartment = paste0(Compartment, '_', covid_region)) %>%
+    select(-covid_region) %>%
+    spread(Compartment, Reporting) %>%
+    select(time, paste0('hosp_reporting_', 1:11), paste0('death_reporting_', 1:11), paste0('icu_reporting_', 1:11))
+
+region_covars = emr_report_covar %>%
+  full_join(frac_averted_df, by='time') %>% 
+  full_join(read.csv(covid_get_path(hospital_covar_file)), by='time')
+
+shared_covars = fraction_underreported %>%
+  full_join(data.frame(time=1:500, hfr_cov=0, beta_cov=0, icu_cov=0)) 
+  
+## Population sizes
+print('Reading in population info')
+population_list=read.csv(covid_get_path(population_file))
+n_age_groups = 1
+stopifnot(n_age_groups == 1)
+
+## User-specification of parameters
+print('Initializing parameters')
+par_frame = read.csv(default_par_file)
+pars = as.numeric(par_frame$value)
+names(pars) = par_frame$param_name
+pars = as.list(pars)
+pars$tmax = simend
+pars$tmin = simstart
+pars$t_data_max = simend
+
+## read in fitting data
+hosp = read.csv(covid_get_path(emr_data_file)) %>%
+  filter(covid_region %in% 1:11) %>%
+  select(time, covid_region, ObsHosp_1) %>%
+  spread(covid_region, ObsHosp_1) %>%
+  select(time, as.character(1:11))
+names(hosp) = c('time', paste0('ObsHosp_', 1:11)) 
+
+icu_census = read.csv(covid_get_path(emr_data_file)) %>%
+  filter(covid_region %in% 1:11) %>%
+  select(time, covid_region, ObsICU_1) %>%
+  spread(covid_region, ObsICU_1) %>%
+  select(time, as.character(1:11))
+names(icu_census) = c('time', paste0('ObsICU_', 1:11))
+ll_deaths = read.csv(covid_get_path(ll_file)) %>%
+  mutate(time = as.numeric(as.Date(date) - as.Date('2020-01-14'))) %>%
+  mutate(ll_deaths = ll_deaths) %>%
+  select(time, covid_region, ll_deaths) %>%
+  spread(covid_region, ll_deaths) %>%
+  select(time, as.character(1:11))
+names(ll_deaths) = c('time', paste0('ObsDeaths_', 1:11))
+fitting_data = full_join(hosp, ll_deaths, by='time') %>%
+  full_join(icu_census, by='time') %>%
+  arrange(time)
+NA_row = data.frame(time=min(fitting_data$time) -1)
+fitting_data = full_join(NA_row, fitting_data)
