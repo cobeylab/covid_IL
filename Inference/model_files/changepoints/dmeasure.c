@@ -7,10 +7,8 @@ const double *hosp_report = &hosp_reporting_1;
 const double *icu_report = &icu_reporting_1;
 
 // States
-const double *new_hosp_deaths = &new_hosp_deaths_1_1; // latent hospitalized deaths
-const double *new_nonhosp_deaths = &new_nonhosp_deaths_1_1; // latent non-hospitalized deaths
-const double *ObsDeaths = &ObsDeaths_1; // observed incident nonhospitalized deaths in each region
-const double *ObsHospDeaths = &ObsHospDeaths_1; // observed incident deaths in each region
+const double *new_deaths = &new_deaths_1_1; // latent total deaths
+const double *ObsDeaths = &ObsDeaths_1; // observed incident deaths in each region
 const double *ObsHosp = &ObsHosp_1; // observed total census hospitalizations in each region
 const double *ObsICU = &ObsICU_1; // observed total census hospitalizations in each region
 const double *IFRtrack = &IFRtrack_1_1; 
@@ -29,10 +27,9 @@ for (int region=0; region<n_regions; region += 1){
         lik_total += -1e3;
     }
 
-    double hosp_death_reporting = reporting_cap;
     double total_hospital_reporting= hosp_report[region];
     double icu_reporting= icu_report[region];
-    double nonhosp_death_reporting = DeathReportTrack[region];
+    double death_reporting = DeathReportTrack[region];
     
     if (icu_reporting >= reporting_cap){
         icu_reporting = reporting_cap;
@@ -42,10 +39,8 @@ for (int region=0; region<n_regions; region += 1){
     }
 
     // Nonhospitalized deaths
-    lik_total += dnbinom_states(ObsDeaths, new_nonhosp_deaths[region], region, nonhosp_death_reporting, 10);
-
-    //Hospital deaths
-    lik_total += dpois_states(ObsHospDeaths, new_hosp_deaths[region], region, hosp_death_reporting);
+    lik_total += dnbinom_states(ObsDeaths, new_deaths[region], region, death_reporting, 10);
+    //Rprintf("%f %f %f %f %f\n",t, new_deaths[region], ObsDeaths[region], death_reporting, lik_total);
 
     // Census hospitalization
     double agg_hosp = get_sum(region, alpha_IH1_int, IH1) + get_sum(region, alpha_IH2_int, IH2);

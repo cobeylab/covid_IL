@@ -11,8 +11,6 @@
 // region-specific population size
   const double *N = &N_1; //region-specific
 
-// region-specific fraction of non-hospitalized deaths
-  const double *phi_scale = &phi_scale_1;
 
 // region-specific transmission baseline parameter for scaling
   const double *changepoint_values = &changepoints_1_1;
@@ -105,15 +103,13 @@ for (int region=0; region<n_regions; region += 1){
     if (excess < 0){
         excess = 0;
     }
-    double obs_nh = ll_deaths - ll_hosp;
-    double exp_nh = excess - (ll_hosp  / reporting_cap);
-    double nhd_report = obs_nh / exp_nh;
-    if (nhd_report >= reporting_cap){            
-      nhd_report = reporting_cap;
-    } else if (nhd_report < 0 ){
-      nhd_report = 0;  
+    double all_death_report = ll_deaths / excess;
+    if (all_death_report >= reporting_cap){
+      all_death_report = reporting_cap;
+    } else if (all_death_report < 0){
+      all_death_report = 0;
     }
-    DeathReportTrack[region] = nhd_report;
+    DeathReportTrack[region] = all_death_report;
 
     double gamma_h = 1 / (inv_gamma_h[region] + inv_gamma_h_intercept[region]);
     double mu_h = 1/ (inv_mu_h[region]);
@@ -129,24 +125,23 @@ for (int region=0; region<n_regions; region += 1){
     int n_hfr_changepoint_int = n_HFR_changepoints[region];
     int hfr_changepoint_offset = get_changepoint_index(region, n_HFR_changepoints);
     double HFR = calc_time_varying_param(hfr_changepoint_offset, n_hfr_changepoint_int, t, HFR_changepoint_values, HFR_values, HFR_max, HFR_min);
+    double HFR0 = calc_time_varying_param(hfr_changepoint_offset, n_hfr_changepoint_int, 47, HFR_changepoint_values, HFR_values, HFR_max, HFR_min);
     HFRtrack[region] = HFR;
     int n_icu_changepoint_int = n_ICU_changepoints[region];
     int icu_changepoint_offset = get_changepoint_index(region, n_ICU_changepoints);
     double ICUfrac = calc_time_varying_param(icu_changepoint_offset, n_icu_changepoint_int, t, ICU_changepoint_values, ICU_values, ICU_max, ICU_min);
 
 
-    double phi = unlogit(phi_scale[region], IFR_constraint, 0);
-    double IHR;
-    if (t == 47){
-      IHR = (IFR_constraint - phi) / (HFR - phi);
-    } else{
-      IHR = IHRtrack[region];
+    double IHR = 0.02;
+    double phi = (IFR_constraint - IHR * HFR0) / (1 - IHR);
+    if (phi < 0){
+      phi = 0;
+    } 
+    if (phi > 1){
+      phi = 1;
     }
-    IHRtrack[region] = IHR;
 
-    if (IHR < 0){
-      IHR = 0;
-    }
+    IHRtrack[region] = IHR;
     IFRtrack[region] = HFR * IHR + (1-IHR) * phi;
 
     // Figure out total infectious

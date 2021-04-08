@@ -50,15 +50,13 @@ for (int region=0; region<n_regions; region += 1){
       if (excess < 0){
           excess = 0;
       }
-      double obs_nh = ll_deaths - ll_hosp;
-      double exp_nh = excess - (ll_hosp  / reporting_cap);
-      double nhd_report = obs_nh / exp_nh;
-      if (nhd_report >= reporting_cap){            
-        nhd_report = reporting_cap;
-      } else if (nhd_report < 0 ){
-        nhd_report = 0;  
+      double all_death_report = ll_deaths / excess;
+      if (all_death_report >= reporting_cap){
+        all_death_report = reporting_cap;
+      } else if (all_death_report < 0){
+        all_death_report = 0;
       }
-      DeathReportTrack[region] = nhd_report;
+      DeathReportTrack[region] = all_death_report;
 
       double rN = rbinom(N[region], num_init[region]);
       int EStart = region * alpha_E_int;

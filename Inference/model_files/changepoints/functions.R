@@ -152,6 +152,7 @@ simulate_pomp_covid <- function(
       rinit = rinit_Csnippet,
       rprocess = euler(rprocess_Csnippet, delta.t = delta_t),
       dmeasure = dmeasure_Csnippet,
+      rmeasure = rmeasure_Csnippet,
       params = params,
       covar = covar_table,
       statenames = c(state_names, accum_names),
@@ -309,9 +310,6 @@ simulate_pomp_covid__init_parameters <- function(
     params[paste0("n_ICU_changepoints_",c(1:n_regions))] = unlist(
         unlist(input_params[paste0('n_ICU_changepoints_', c(1:n_regions))])
       )
-    params[paste0("phi_scale_",c(1:n_regions))] = unlist(
-        unlist(input_params[paste0('phi_scale_', c(1:n_regions))])
-      )
     # Region and changepoint specific
     for (region in 1:n_regions){
       eval_str = paste0('n_changepoints_',region)
@@ -371,7 +369,7 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
   region_covars,
   shared_covars) {
     
-  covar_table_interventions <- data.frame(time = c(1:500))
+  covar_table_interventions <- data.frame(time = c(1:600))
   # add  region-specific covars
   covar_table_interventions = left_join(covar_table_interventions, region_covars, by='time')
   if(input_params$region_to_test > 0){
@@ -385,7 +383,9 @@ simulate_pomp_covid__init_covariate_table <- function(input_params,
   }
 
   # add non-region-specific covars
-  covar_table_interventions = left_join(covar_table_interventions, shared_covars, by='time')
+  covar_table_interventions = left_join(covar_table_interventions, shared_covars, by='time') %>%
+    arrange(time)
+  covar_table_interventions = na.approx(covar_table_interventions, rule=2)
   covar_table_interventions
 }
  
@@ -607,7 +607,7 @@ get_Rt = function(df.in, new_pars, region_to_test){
     with(as.list(new_pars), {
       beta_init = unlogit(beta_values_1_1, 0.9, 0.4)
       HFR_init = unlogit(HFR_values_1_1, HFR_max, HFR_min)
-      phi = unlogit(phi_scale_1, IFR_constraint, 0)
+      phi = (IFR_constraint - 0.02 * HFR_init) / (1 - 0.02)
       IHR_init = (IFR_constraint - phi) / (HFR_init - phi)
       paras = list(sigma = 1/3.5,
                    zeta_s = 1/1.5,
@@ -665,12 +665,10 @@ plot_generic = function(alloutputs,
 
 
   plotout_noage = make_base_plotdf(alloutputs$plotting_output, compartments_to_plot, new_compartment_name_map)
-  cumulative_hosp = get_cumulative(plotout_noage, "Reported hospital deaths", 'Reported cumulative hospital deaths', 'Simulation (reported)')
-  cumulative_all_deaths = get_cumulative(plotout_noage, "Reported non-hospital deaths", 'Reported cumulative non-hosp deaths', 'Simulation (reported)')
+  cumulative_hosp = get_cumulative(plotout_noage, "Reported deaths", 'Reported cumulative deaths', 'Simulation (reported)')
   IFRdf = get_observed_ifr(alloutputs$plotting_output)
   plotout_noage = bind_rows(plotout_noage, IFRdf) %>%
-    bind_rows(cumulative_hosp) %>%
-    bind_rows(cumulative_all_deaths)
+    bind_rows(cumulative_hosp)
   frac_recovered = plotout_noage %>%
     filter(Compartment == 'Fraction recovered') %>%
     mutate(Cases = Cases / popfinal[region_to_test])

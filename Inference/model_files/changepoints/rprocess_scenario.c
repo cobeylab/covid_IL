@@ -12,7 +12,6 @@
   const double *N = &N_1; //region-specific
 
 // region-specific fraction of non-hospitalized deaths
-  const double *phi_scale = &phi_scale_1;
 const double *inv_mu_h = &inv_mu_h_1;
 
 const double *inv_gamma_h = &inv_gamma_h_1;
@@ -24,6 +23,7 @@ const double *inv_zeta_icu_intercept = &inv_zeta_icu_intercept_1;
   const double *changepoint_values = &changepoints_1_1;
   const double *n_changepoints = &n_changepoints_1;
   const double *beta_values = &beta_values_1_1;
+  const double *frac_averted = &frac_averted_1;
 
 // region-specific HFR
   const double *HFR_changepoint_values = &HFR_changepoint_values_1_1;
@@ -109,13 +109,15 @@ double get_transmission( int coffset, int n_timepoints, double t_now){
 
 
 for (int region=0; region<n_regions; region += 1){
+    double new_init_freq = unlogit(init_freq, 0.07, 0.02);
 
     if (t == 384){ // If we're initializing the new variant, move infectious people over to their appropriate compartment
-      move_classes(E, Evar, alpha_E_int, init_freq, region);
-      move_classes(P, Pvar, alpha_P_int, init_freq, region);
-      move_classes(IM, IMvar, alpha_IM_int, init_freq, region);
-      move_classes(IM_dead, IM_deadvar, alpha_IM_int, init_freq, region);
-      move_classes(IS, ISvar, alpha_IS_int, init_freq, region);
+      
+      move_classes(E, Evar, alpha_E_int, new_init_freq,  region);
+      move_classes(P, Pvar, alpha_P_int, new_init_freq, region);
+      move_classes(IM, IMvar, alpha_IM_int, new_init_freq, region);
+      move_classes(IM_dead, IM_deadvar, alpha_IM_int, new_init_freq, region);
+      move_classes(IS, ISvar, alpha_IS_int, new_init_freq, region);
     }
 
     // Calculate non-hospital death underreporting
@@ -123,15 +125,13 @@ for (int region=0; region<n_regions; region += 1){
     if (excess < 0){
         excess = 0;
     }
-    double obs_nh = ll_deaths - ll_hosp;
-    double exp_nh = excess - (ll_hosp  / reporting_cap);
-    double nhd_report = obs_nh / exp_nh;
-    if (nhd_report >= reporting_cap){            
-      nhd_report = reporting_cap;
-    } else if (nhd_report < 0 ){
-      nhd_report = 0;  
+    double all_death_report = ll_deaths / excess;
+    if (all_death_report >= reporting_cap){
+      all_death_report = reporting_cap;
+    } else if (all_death_report < 0){
+      all_death_report = 0;
     }
-    DeathReportTrack[region] = nhd_report;
+    DeathReportTrack[region] = all_death_report;
 
     double gamma_h = 1 / (inv_gamma_h[region] + inv_gamma_h_intercept[region]);
     double mu_h = 1/ (inv_mu_h[region]);
@@ -155,33 +155,35 @@ for (int region=0; region<n_regions; region += 1){
       int changepoint_offset = get_changepoint_index(region, n_changepoints);
       double transmission = get_transmission(changepoint_offset, n_changepoint_int, t);
       transmission += transmission * process_noise;
-      transmissionRate[region] = transmission;
       double transmission_var = transmission * scalefactor;
+      transmissionRate[region] = transmission * (infectious / (infectious + infectious_new)) + transmission_var * (infectious_new / (infectious + infectious_new));
 
     // Calculate time-varying ratios
     int n_hfr_changepoint_int = n_HFR_changepoints[region];
     int hfr_changepoint_offset = get_changepoint_index(region, n_HFR_changepoints);
     double HFR = calc_time_varying_param(hfr_changepoint_offset, n_hfr_changepoint_int, t, HFR_changepoint_values, HFR_values, HFR_max, HFR_min);
-    double HFRvar = HFR * scalefactor_death;
+    double HFR0 = calc_time_varying_param(hfr_changepoint_offset, n_hfr_changepoint_int, 47, HFR_changepoint_values, HFR_values, HFR_max, HFR_min);
+    double HFRvar = HFR;
     HFRtrack[region] = HFR;
     int n_icu_changepoint_int = n_ICU_changepoints[region];
     int icu_changepoint_offset = get_changepoint_index(region, n_ICU_changepoints);
     double ICUfrac = calc_time_varying_param(icu_changepoint_offset, n_icu_changepoint_int, t, ICU_changepoint_values, ICU_values, ICU_max, ICU_min);
-    double phi = unlogit(phi_scale[region], IFR_constraint, 0);
+
+
+    double IHR = 0.02 * (1-frac_averted[region]);
+    double IHRvar = scalefactor_death * IHR * (1-frac_averted[region]);
+    double phi = (IFR_constraint - IHR * HFR0) / (1 - IHR);
     double phivar = phi * scalefactor_death;
-
-    double IHR;
-    if (t == 47){
-      IHR = (IFR_constraint - phi) / (HFR - phi);
-    } else{
-      IHR = IHRtrack[region];
+    if (phi < 0){
+      phi = 0;
+    } 
+    if (phi > 1){
+      phi = 1;
     }
+
     IHRtrack[region] = IHR;
-
-    if (IHR < 0){
-      IHR = 0;
-    }
     IFRtrack[region] = HFR * IHR + (1-IHR) * phi;
+
 
       // Outflow from S, consider as competing rates problem
       double lambda = (transmission) * infectious / N[region];
@@ -212,7 +214,7 @@ for (int region=0; region<n_regions; region += 1){
       double dP_m_to_recover = dP_m - dP_m_to_death;
       
       // Split the last outflow from P into severe and mild
-      double dPvar_s = rbinom(dPvar[alpha_P_int-1], IHR);
+      double dPvar_s = rbinom(dPvar[alpha_P_int-1], IHRvar);
       double dPvar_m = dPvar[alpha_P_int-1] - dPvar_s;
       double dPvar_m_to_death = rbinom(dPvar_m, phivar); // phi is fraction of non-severe infections that die
       double dPvar_m_to_recover = dPvar_m - dPvar_m_to_death;
