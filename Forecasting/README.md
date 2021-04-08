@@ -9,14 +9,14 @@ We simulate our model forward in time to obtain projections for deaths, hospital
 To account for the uncertainty in our estimate of the final transmission rate, we first evaluated the likelihood of rates within 10% of the maximum-likelihood value.
 We then produced 1000 simulations using final transmission rates sampled proportionally to likelihood, so that values more consistent with the data were more likely to be sampled.
 
-Below, we show the results of our model projections through December 31, 2020.
+Below, we show the results of our model projections through March 28, 2021.
 Solid lines indicate the median projected value and the shaded area shows the 95% prediction interval. 
 The dashed line shows the latest date in the data used to calibrate the model.
 
 Figure 1: Deaths per day in the state of Illinois and each of the 11 COVID regions. Data (orange) are plotted by reporting date and model results (green) are plotted by precise date of death.
 ![Figure 1](./plots/uc_deaths.png)
 
-Figure 2: Hospital beds occupied by COVID-19 patients in the state of Illinois and each of the 11 COVID regions. Orange points show the number of hospital beds occpied by COVID patients for the state of Illinois [reported to the CDC](https://healthdata.gov/dataset/covid-19-reported-patient-impact-and-hospital-capacity-state-timeseries).
+Figure 2: Hospital beds occupied by COVID-19 patients in the state of Illinois and each of the 11 COVID regions. Orange points show the number of hospital beds occpied by COVID patients for the state of Illinois [reported to the CDC](https://healthdata.gov/Hospital/COVID-19-Reported-Patient-Impact-and-Hospital-Capa/g62h-syeh).
 ![Figure 2](./plots/uc_hosp.png)
 
 Figure 3: Estimated fraction of the population that is currently infectious in the state of Illinois and each of the 11 COVID regions. 
@@ -27,13 +27,18 @@ Figure 4: Estimated fraction of the population that has recovered in the state o
 
 ## Changelog
 
+### 2021-04-08 (fits using data through 2021-03-28)
+* Projections include scenarios with a B.1.1.7 variant prevalence between 2%-10% on February 1.
+* Assume that B.1.1.7 is either 1.3 times more transmissible and 1.5 times more likely to result in hospitalization, or 1.5 times more transmissible and 1.7 times more likely to result in hospitalization.
+* Assume that vaccination coverage of people 65+ increases according to current trends and that vaccinated individuals are 100% protected from hospitalization.
+
 ### 2021-01-26 (for week of 2021-01-18)
 * Use negative binomial observation model for non-hospital deaths.
 * Switched back to pre 2021-01-19 projection method.
 * Fit with both 0.8% and 0.9% initial IFR.
 
 ### 2021-01-19 (for week of 2021-01-11)
-* Added additional changepoint in transmission for all reigons on December 31.
+* Added additional changepoint in transmission for all regions on December 31.
 * Projections now start at latent states generated from particle filtering.
 
 ### 2020-12-11
